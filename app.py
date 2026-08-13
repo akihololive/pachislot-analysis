@@ -7,9 +7,12 @@ st.set_page_config(page_title="パチスロ 10日間データ一括分析ツー�
 st.title("🎰 パチスロ：複数店舗対応 10日間一括分析ツール（Web全自動版）")
 st.markdown("GitHub内の各店舗フォルダから最新10日分のデータを自動で取得し、一括クロス分析を行います！")
 
-# 💡 アカウント名「akololivo」で100%固定された正しいURLです！
-BASE_API_URL = "github.com"
-RAW_URL_BASE = "githubusercontent.com"
+# 💡 【真の最終確定】正しいアカウント名「akihololive」で完璧に固定しました！
+GITHUB_USER = "akihololive"
+GITHUB_REPO = "pachislot-analysis"
+
+BASE_API_URL = f"https://github.com{GITHUB_USER}/{GITHUB_REPO}/contents/data"
+RAW_URL_BASE = f"https://githubusercontent.com{GITHUB_USER}/{GITHUB_REPO}/main/data"
 
 def to_k_notation(val):
     return "0" if val == 0 else f"{val/1000:+.1f}k".replace(".0k", "k")
@@ -31,7 +34,9 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
     with st.spinner(f"⏳ ネット上の【{selected_shop}】フォルダから最新10日分のデータを取得中..."):
         try:
             encoded_shop = quote(selected_shop)
-            list_url = BASE_API_URL + "/" + encoded_shop
+            
+            # 1. GitHubからファイル一覧をスキャン
+            list_url = f"{BASE_API_URL}/{encoded_shop}"
             res = requests.get(list_url)
             
             target_files = []
@@ -41,6 +46,7 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
                 txt_files.sort(reverse=True)
                 target_files = txt_files[:10]
             else:
+                # API経由で取得できない場合の直接アタック（2026年08月の10日間）
                 base_dates = [f"202608{str(i).zfill(2)}.txt" for i in range(3, 13)]
                 target_files = sorted(base_dates, reverse=True)
 
@@ -51,7 +57,7 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
             for fname in target_files:
                 day_num = day_mapping[fname]
                 encoded_fname = quote(fname)
-                file_raw_url = RAW_URL_BASE + "/" + encoded_shop + "/" + encoded_fname
+                file_raw_url = f"{RAW_URL_BASE}/{encoded_shop}/{encoded_fname}"
                 
                 file_res = requests.get(file_raw_url)
                 if file_res.status_code == 200:
@@ -62,7 +68,7 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
                         if not line or "機種" in line or "台番" in line: continue
                         parts = re.split(r'\t+|\s{2,}', line)
                         if len(parts) >= 3:
-                            name, table_text, coin_text = parts.strip(), parts.strip(), parts.strip()
+                            name, table_text, coin_text = parts[0].strip(), parts[1].strip(), parts[2].strip()
                             clean_coin = coin_text.replace("枚", "").replace(",", "").replace("+", "").strip()
                             try:
                                 coin, table_num = int(clean_coin), int(table_text)
@@ -72,7 +78,7 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
                             except ValueError: continue
 
             if success_count == 0:
-                st.error(f"❌ {selected_shop} のデータファイルを1つも読み込めませんでした。")
+                st.error(f"❌ {selected_shop} のデータファイル（20260803.txt〜20260812.txt）を1つも読み込めませんでした。ファイル名やアップロード先が正しいかご確認ください。")
                 st.stop()
             
             st.session_state[current_shop_key] = all_data
@@ -102,7 +108,12 @@ if current_shop_key in st.session_state:
         plus_days = sum(1 for v in history.values() if v > 0)
         minus_days = sum(1 for v in history.values() if v <= 0)
         total_coin = sum(history.values())
-        history_k_list = [to_k_notation(history[day_mapping[fname]]) for fname in target_files if day_mapping[fname] in history]
+        
+        history_k_list = []
+        for fname in target_files:
+            if day_mapping[fname] in history:
+                v = history[day_mapping[fname]]
+                history_k_list.append("0" if v == 0 else f"{v/1000:+.1f}k".replace(".0k", "k"))
         history_flow_short = "[" + ", ".join(history_k_list) + "]"
         
         show_this_table, star, rank_score = False, "", 0
@@ -151,8 +162,8 @@ if current_shop_key in st.session_state:
             target_table_num = int(df_clean.iloc[row_idx]["台番号_num"])
             target_machine_name = str(df_clean.iloc[row_idx]["機種名"])
         except Exception:
-            target_table_num = int(df_clean.iloc["台番号_num"])
-            target_machine_name = str(df_clean.iloc["機種名"])
+            target_table_num = int(df_clean.iloc[0]["台番号_num"])
+            target_machine_name = str(df_clean.iloc[0]["機種名"])
         
         if target_table_num:
             st.write("---")
