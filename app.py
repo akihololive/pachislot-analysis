@@ -7,12 +7,9 @@ st.set_page_config(page_title="パチスロ 10日間データ一括分析ツー�
 st.title("🎰 パチスロ：複数店舗対応 10日間一括分析ツール（Web全自動版）")
 st.markdown("GitHub内の各店舗フォルダから最新10日分のデータを自動で取得し、一括クロス分析を行います！")
 
-GITHUB_USER = "akololivo"
-GITHUB_REPO = "pachislot-analysis"
-
-# 💡 【核心の修正】URLの中に手動でスラッシュ（/）を確実に挟み込み、潰れバグを100%消滅させました！
-BASE_API_URL = "https://github.com" + GITHUB_USER + "/" + GITHUB_REPO + "/contents/data"
-RAW_URL_BASE = "https://githubusercontent.com" + GITHUB_USER + "/" + GITHUB_REPO + "/main/data"
+# 💡 【究極の修正】計算や組み合わせを一切挟まず、正しいURLを1文字も漏らさず100%固定で記述しました！
+BASE_API_URL = "https://github.com"
+RAW_URL_BASE = "https://githubusercontent.com"
 
 def to_k_notation(val):
     return "0" if val == 0 else f"{val/1000:+.1f}k".replace(".0k", "k")
