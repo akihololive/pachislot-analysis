@@ -14,26 +14,23 @@ with col2:
     analysis_mode = st.radio("🔍 分析フォーカス", ["据え置き狙い（連続プラス台）", "設定上げ狙い（連続凹み台）"], horizontal=True)
 
 st.write("---")
-current_shop_key = 'island_all_data'
 
 if st.button("🔄 アイランド秋葉原店のデータを一括スキャン", type="primary"):
     with st.spinner("⏳ ネット上のフォルダからデータを取得中..."):
         try:
-            # 💡 あなたのGitHubに現実に存在する「確定している過去のファイル名」だけを1枚ずつ直撃します！
-            target_files = [
-                "20260810.txt", "20260809.txt", "20260808.txt", "20260807.txt",
-                "20260806.txt", "20260805.txt", "20260804.txt", "20260803.txt"
-            ]
-            
+            target_files = ["20260810.txt", "20260809.txt", "20260808.txt", "20260807.txt", "20260806.txt", "20260805.txt", "20260804.txt", "20260803.txt"]
             day_mapping = {fname: (index + 1) for index, fname in enumerate(target_files)}
             all_data, unique_machines = {}, set()
             success_count = 0
             
+            # 💡 【重要】日本語の店舗フォルダ名を100%安全なネット専用アドレスに事前に暗号化した文字列です
+            shop_path = "%E3%82%A2%E3%82%A4%E3%83%A9%E3%83%B3%E3%83%89%E7%A7%8B%E8%91%89%E5%8E%9F%E5%BA%97"
+            
             for fname in target_files:
                 day_num = day_mapping[fname]
                 
-                # 🛠️ 1本の間違いのない「アイランド秋葉原店」専用URLを直接1行で完全固定！
-                file_raw_url = "https://githubusercontent.com" + fname
+                # 🛠️ 【核心の修正】スラッシュが消えるバグを200%回避するため、f文字を使わずカンマやプラスで完全に分離して一本のアドレスをガチガチに固定！
+                file_raw_url = "https://githubusercontent.com" + shop_path + "/" + fname
                 
                 file_res = requests.get(file_raw_url)
                 if file_res.status_code == 200:
@@ -56,7 +53,7 @@ if st.button("🔄 アイランド秋葉原店のデータを一括スキャン"
                             except ValueError: continue
 
             if success_count == 0:
-                st.error("❌ GitHub内の『data/アイランド秋葉原店』フォルダからファイルを1つも読み込めませんでした。ファイル名が 20260810.txt などの形式になっているかご確認ください。")
+                st.error("❌ GitHub内の『data/アイランド秋葉原店』フォルダからファイルを1つも読み込めませんでした。")
                 st.stop()
             
             st.session_state["island_all_data"] = all_data
@@ -114,17 +111,16 @@ if "island_all_data" in st.session_state:
         if show_this_table:
             total_days = plus_days + minus_days
             avg_coin = int(total_coin / total_days) if total_days > 0 else 0
-            # 💡 【重要修正】"10日平均差枚" の後ろをコロン(:)に修正しました！
             table_rows.append({
                 "rank_score": rank_score, "台番号_num": table_num, "台番号": f"{table_num}番", "機種名": info["name"],
-                "ステータス": star, "前日差枚": latest_coin, "10日間累計": total_coin, "勝率履歴_勝数": int(plus_days),
+                "ステータス": star, "前日差枚": latest_coin, "10日間累計": total_coin, 
                 "勝率履歴": f"{plus_days}勝/{minus_days}敗", "10日平均差枚": avg_coin, "10日間のデータ推移(新しい順)": history_flow_short
             })
             
     if table_rows:
-        table_rows.sort(key=lambda x: (-x["勝率履歴_勝数"], -x["10日間累計"], x["台番号_num"]))
+        table_rows.sort(key=lambda x: (x["台番号_num"]))
         df_display = pd.DataFrame(table_rows)
-        df_clean = df_display.drop(columns=["rank_score", "勝率履歴_勝数"])
+        df_clean = df_display.drop(columns=["rank_score"])
         
         selected_rows = st.dataframe(
             df_clean, use_container_width=True, height=400, on_select="rerun", selection_mode="single-row",
@@ -136,7 +132,7 @@ if "island_all_data" in st.session_state:
         )
         
         try:
-            row_idx = selected_rows["selection"]["rows"] if selected_rows and "rows" in selected_rows["selection"] and selected_rows["selection"]["rows"] else 0
+            row_idx = selected_rows["selection"]["rows"][0] if selected_rows and "rows" in selected_rows["selection"] and selected_rows["selection"]["rows"] else 0
             target_table_num = int(df_clean.iloc[row_idx]["台番号_num"])
             target_machine_name = str(df_clean.iloc[row_idx]["機種名"])
         except Exception:
@@ -155,7 +151,7 @@ if "island_all_data" in st.session_state:
                 
             if graph_data:
                 df_chart = pd.DataFrame(graph_data)
-                df_chart_fixed = df_chart.set_index("index_num").reindex(range(1, 11)).dropna()
+                df_chart_fixed = df_chart.set_index("index_num").reindex(range(1, 9)).dropna()
                 st.bar_chart(df_chart_fixed["当日の差枚数"], use_container_width=True)
                 
                 df_table_formatted = df_chart_fixed.copy()
