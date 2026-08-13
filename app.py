@@ -2,11 +2,9 @@ import re, requests
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="パチスロ 10日間データ一括分析ツール", page_icon="🎰", layout="wide")
-st.title("🎰 パチスロ：複数店舗対応 10日間一括分析ツール（Web全自動版）")
-
-shop_list = ["アイランド秋葉原店", "エクサファースト", "エスパス秋葉原店"]
-selected_shop = st.selectbox("🏢 分析する店舗を選択してください", shop_list)
+st.set_page_config(page_title="アイランド秋葉原店 10日間分析ツール", page_icon="🎰", layout="wide")
+st.title("🎰 アイランド秋葉原店 専用：10日間クロス分析ツール")
+st.markdown("あなたのGitHub内のファイルからデータを直接取得し、クロス分析を行います。")
 
 st.write("---")
 col1, col2 = st.columns(2)
@@ -16,31 +14,26 @@ with col2:
     analysis_mode = st.radio("🔍 分析フォーカス", ["据え置き狙い（連続プラス台）", "設定上げ狙い（連続凹み台）"], horizontal=True)
 
 st.write("---")
-current_shop_key = f'web_data_{selected_shop}'
 
-if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキャン", type="primary"):
-    with st.spinner(f"⏳ ネット上の【{selected_shop}】フォルダからデータを取得中..."):
+if st.button("🔄 アイランド秋葉原店のデータを一括スキャン", type="primary"):
+    with st.spinner("⏳ ネット上のフォルダからデータを取得中..."):
         try:
-            target_files = [f"202608{str(i).zfill(2)}.txt" for i in range(3, 13)]
-            target_files.sort(reverse=True)
+            # 💡 【究極のファクト修正】あなたのGitHubに現実に存在する「確定している過去のファイル名」だけを1枚ずつ直撃します！
+            # ※存在しない「12日」や「13日」を自動計算で探しに行くのを完全にストップしました！
+            target_files = [
+                "20260810.txt", "20260809.txt", "20260808.txt", "20260807.txt",
+                "20260806.txt", "20260805.txt", "20260804.txt", "20260803.txt"
+            ]
             
             day_mapping = {fname: (index + 1) for index, fname in enumerate(target_files)}
             all_data, unique_machines = {}, set()
             success_count = 0
             
-            # 各店舗の日本語フォルダ名を100%安全なネット専用文字に事前変換した辞書
-            shop_url_map = {
-                "アイランド秋葉原店": "%E3%82%A2%E3%82%A4%E3%83%A9%E3%83%B3%E3%83%89%E7%A7%8B%E8%91%89%E5%8E%9F%E5%BA%97",
-                "エクサファースト": "%E3%83%A0%E3%82%AF%E3%82%B5%E3%83%95%E3%82%A1%E3%83%BC%E3%82%B9%E3%83%88",
-                "エスパス秋葉原店": "%E3%82%A8%E3%82%B9%E3%83%91%E3%82%B9%E7%A7%8B%E8%91%89%E5%8E%9F%E5%BA%97"
-            }
-            shop_path = shop_url_map.get(selected_shop, shop_list[0])
-            
             for fname in target_files:
                 day_num = day_mapping[fname]
                 
-                # 🛠️ 【核心の修正】全角スペースや結合バグを200%回避する、最初から完璧に完成された1本のアドレス！
-                file_raw_url = f"https://githubusercontent.com{shop_path}/{fname}"
+                # 🛠️ カッコや変数を一切使わず、1本の間違いのない「アイランド秋葉原店」専用URLを直接1行で完全固定！
+                file_raw_url = "https://githubusercontent.com" + fname
                 
                 file_res = requests.get(file_raw_url)
                 if file_res.status_code == 200:
@@ -51,7 +44,7 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
                         if not line or "機種" in line or "台番" in line: continue
                         parts = re.split(r'\t+|\s{2,}', line)
                         if len(parts) >= 3:
-                            name, table_text, coin_text = parts.strip(), parts.strip(), parts.strip()
+                            name, table_text, coin_text = parts[0].strip(), parts[1].strip(), parts[2].strip()
                             clean_coin = coin_text.replace("枚", "").replace(",", "").replace("+", "").strip()
                             try:
                                 coin, table_num = int(clean_coin), int(table_text)
@@ -61,25 +54,24 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
                             except ValueError: continue
 
             if success_count == 0:
-                st.error(f"❌ {selected_shop} のデータファイルが1つも読み込めませんでした。「data/{selected_shop}」フォルダの中にファイルがあるかご確認ください。")
+                st.error("❌ GitHub内の『data/アイランド秋葉原店』フォルダからファイルを1つも読み込めませんでした。ファイル名が 20260810.txt などの形式になっているかご確認ください。")
                 st.stop()
             
-            st.session_state[current_shop_key] = all_data
-            st.session_state[f"web_machines_{selected_shop}"] = sorted(list(unique_machines))
-            st.session_state[f"web_files_{selected_shop}"] = target_files
-            st.session_state[f"web_mapping_{selected_shop}"] = day_mapping
-            st.success(f"✅ 【{selected_shop}】のデータスキャンに成功しました！（読み込み完了: {success_count}日分）")
+            st.session_state["island_all_data"] = all_data
+            st.session_state["island_unique_machines"] = sorted(list(unique_machines))
+            st.session_state["island_target_files"] = target_files
+            st.session_state["island_day_mapping"] = day_mapping
+            st.success(f"✅ 【アイランド秋葉原店】のスキャンに成功しました！（読み込み完了: {success_count}日分）")
         except Exception as e:
             st.error(f"❌ エラーが発生しました: {str(e)}")
 
-if current_shop_key in st.session_state:
-    all_data = st.session_state[current_shop_key]
-    unique_machines = st.session_state[f"web_machines_{selected_shop}"]
-    target_files = st.session_state[f"web_files_{selected_shop}"]
-    day_mapping = st.session_state[f"web_mapping_{selected_shop}"]
+if "island_all_data" in st.session_state:
+    all_data = st.session_state["island_all_data"]
+    unique_machines = st.session_state["island_unique_machines"]
+    target_files = st.session_state["island_target_files"]
+    day_mapping = st.session_state["island_day_mapping"]
     
     selected_machine = st.selectbox("🎯 機種名でピンポイント絞り込み", ["✨ すべての機種"] + unique_machines)
-    st.write(f"## 🏆 【{selected_shop}】分析結果")
     
     table_rows = []
     for table_num, info in all_data.items():
@@ -123,7 +115,7 @@ if current_shop_key in st.session_state:
             table_rows.append({
                 "rank_score": rank_score, "台番号_num": table_num, "台番号": f"{table_num}番", "機種名": info["name"],
                 "ステータス": star, "前日差枚": latest_coin, "10日間累計": total_coin, "勝率履歴_勝数": int(plus_days),
-                "勝率履歴": f"{plus_days}勝/{minus_days}敗", "10日平均差枚": avg_coin, "10日間のデータ推移(新しい順)": history_flow_short
+                "勝率履歴": f"{plus_days}勝/{minus_days}敗", "10日平均差枚", avg_coin, "10日間のデータ推移(新しい順)": history_flow_short
             })
             
     if table_rows:
@@ -145,8 +137,8 @@ if current_shop_key in st.session_state:
             target_table_num = int(df_clean.iloc[row_idx]["台番号_num"])
             target_machine_name = str(df_clean.iloc[row_idx]["機種名"])
         except Exception:
-            target_table_num = int(df_clean.iloc["台番号_num"])
-            target_machine_name = str(df_clean.iloc["機種名"])
+            target_table_num = int(df_clean.iloc[0]["台番号_num"])
+            target_machine_name = str(df_clean.iloc[0]["機種名"])
         
         if target_table_num:
             st.write("---")
@@ -171,4 +163,4 @@ if current_shop_key in st.session_state:
     else:
         st.info("😭 条件に合う台は見つかりませんでした。")
 else:
-    st.info(f"☝️ 上の「【{selected_shop}】の最新データを一括自動スキャン」ボタンを押すと、自動的に分析が始まります！")
+    st.info("☝️ 上の「🔄 アイランド秋葉原店のデータを一括スキャン」ボタンを押すと、分析が始まります！")
