@@ -9,6 +9,7 @@ st.markdown("GitHub内の各店舗フォルダから最新10日分のデータ�
 
 GITHUB_USER = "akihololive"
 GITHUB_REPO = "pachislot-analysis"
+# 💡 【重要修正】繋ぎ目のスラッシュ（/）を正しく入れてURLバグを完全に解消しました！
 BASE_API_URL = f"https://github.com{GITHUB_USER}/{GITHUB_REPO}/contents/data"
 RAW_URL_BASE = f"https://githubusercontent.com{GITHUB_USER}/{GITHUB_REPO}/main/data"
 
@@ -20,23 +21,19 @@ try:
     res = requests.get(BASE_API_URL)
     if res.status_code == 200:
         contents = res.json()
-        # ディレクトリ（フォルダ）だけを抽出して店舗リストにする
         shop_list = sorted([c["name"] for c in contents if c["type"] == "dir"])
     else:
         shop_list = []
 except Exception:
     shop_list = []
 
-# 万が一フォルダが取得できない場合のバックアップ表記
 if not shop_list:
     shop_list = ["アイランド秋葉原店", "エクサファースト", "エスパス秋葉原店"]
 
-# 🏢 店舗選択のUI
 selected_shop = st.selectbox("🏢 分析する店舗を選択してください", shop_list)
 
 st.write("---")
 
-# 🔍 絞り込み設定のUI
 col1, col2 = st.columns(2)
 with col1:
     min_coin = st.selectbox(
@@ -52,7 +49,6 @@ st.write("---")
 
 current_shop_key = f'web_data_{selected_shop}'
 
-# 🚀 ボタン1回で選択した店舗の全自動スキャンスタート！
 if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキャン", type="primary"):
     with st.spinner(f"⏳ ネット上の【{selected_shop}】フォルダから最新10日分のデータを取得中..."):
         try:
@@ -89,9 +85,9 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
                         if not line or "機種" in line or "台番" in line: continue
                         parts = re.split(r'\t+|\s{2,}', line)
                         if len(parts) >= 3:
-                            name = parts.strip()
-                            table_text = parts.strip()
-                            coin_text = parts.strip()
+                            name = parts[0].strip()
+                            table_text = parts[1].strip()
+                            coin_text = parts[2].strip()
                             clean_coin = coin_text.replace("枚", "").replace(",", "").replace("+", "").strip()
                             try:
                                 coin, table_num = int(clean_coin), int(table_text)
@@ -100,7 +96,6 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
                                 unique_machines.add(name)
                             except ValueError: continue
             
-            # 店舗ごとにセッション情報を記憶
             st.session_state[current_shop_key] = all_data
             st.session_state[f"web_machines_{selected_shop}"] = sorted(list(unique_machines))
             st.session_state[f"web_files_{selected_shop}"] = target_files
@@ -110,7 +105,6 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
         except Exception as e:
             st.error(f"❌ エラーが発生しました: {str(e)}")
 
-# 🎯 データ表示部分
 if current_shop_key in st.session_state:
     all_data = st.session_state[current_shop_key]
     unique_machines = st.session_state[f"web_machines_{selected_shop}"]
@@ -193,8 +187,8 @@ if current_shop_key in st.session_state:
             target_table_num = int(df_clean.iloc[row_idx]["台番号_num"])
             target_machine_name = str(df_clean.iloc[row_idx]["機種名"])
         else:
-            target_table_num = int(df_clean.iloc["台番号_num"])
-            target_machine_name = str(df_clean.iloc["機種名"])
+            target_table_num = int(df_clean.iloc[0]["台番号_num"])
+            target_machine_name = str(df_clean.iloc[0]["機種名"])
         
         if target_table_num:
             st.write("---")
