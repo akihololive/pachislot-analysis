@@ -6,7 +6,9 @@ st.set_page_config(page_title="パチスロ 10日間データ一括分析ツー�
 st.title("🎰 パチスロ：複数店舗対応 10日間一括分析ツール（Web全自動版）")
 st.markdown("GitHub内の各店舗フォルダから最新10日分のデータを自動で取得し、一括クロス分析を行います！")
 
-# 💡 【最終修正】文字の組み合わせを一切やめ、正しいURLを最初から直接100%固定で記述しました！
+GITHUB_USER = "akihololive"
+GITHUB_REPO = "pachislot-analysis"
+
 BASE_API_URL = "https://github.com"
 RAW_URL_BASE = "https://githubusercontent.com"
 
@@ -19,8 +21,9 @@ try:
 except Exception:
     shop_list = []
 
+# 💡 【重要修正】「秋」の重複をきれいに修正し、実際のフォルダ名と完全に一致させました！
 if not shop_list:
-    shop_list = ["アイランド秋秋葉原店", "エクサファースト", "エスパス秋葉原店"]
+    shop_list = ["アイランド秋葉原店", "エクサファースト", "エスパス秋葉原店"]
 
 selected_shop = st.selectbox("🏢 分析する店舗を選択してください", shop_list)
 
@@ -65,7 +68,7 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
                         if not line or "機種" in line or "台番" in line: continue
                         parts = re.split(r'\t+|\s{2,}', line)
                         if len(parts) >= 3:
-                            name, table_text, coin_text = parts.strip(), parts.strip(), parts.strip()
+                            name, table_text, coin_text = parts[0].strip(), parts[1].strip(), parts[2].strip()
                             clean_coin = coin_text.replace("枚", "").replace(",", "").replace("+", "").strip()
                             try:
                                 coin, table_num = int(clean_coin), int(table_text)
