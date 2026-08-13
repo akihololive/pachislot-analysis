@@ -5,14 +5,13 @@ from urllib.parse import quote
 
 st.set_page_config(page_title="パチスロ 10日間データ一括分析ツール", page_icon="🎰", layout="wide")
 st.title("🎰 パチスロ：複数店舗対応 10日間一括分析ツール（Web全自動版）")
-st.markdown("GitHub内の各店舗フォルダから最新10日分のデータを自動で取得し、一括クロス分析を行います！")
+st.markdown("GitHub内の各店舗フォルダから最新 10日分のデータを自動で取得し、一括クロス分析を行います！")
 
-# 💡 ユーザー名をあなたの本物の「akololivo」に修正
 GITHUB_USER = "akololivo"
 GITHUB_REPO = "pachislot-analysis"
 
-# 💡 【核心の修正】://github.com の後ろに、確実にスラッシュ「/」を挟み込む正しい固定URLに直しました！
-BASE_API_URL = "https://://github.com/repos/" + GITHUB_USER + "/" + GITHUB_REPO + "/contents/data"
+# 💡 【核心の修正】https:// の後ろのスラッシュを正しい2本に完全修正しました！
+BASE_API_URL = "https://github.com" + GITHUB_USER + "/" + GITHUB_REPO + "/contents/data"
 RAW_URL_BASE = "https://githubusercontent.com" + GITHUB_USER + "/" + GITHUB_REPO + "/main/data"
 
 def to_k_notation(val):
