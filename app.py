@@ -7,12 +7,13 @@ st.set_page_config(page_title="パチスロ 10日間データ一括分析ツー�
 st.title("🎰 パチスロ：複数店舗対応 10日間一括分析ツール（Web全自動版）")
 st.markdown("GitHub内の各店舗フォルダから最新10日分のデータを自動で取得し、一括クロス分析を行います！")
 
-# 💡 【重要修正】アカウント名のスペルを「akihololivo」に完全に修正しました！
-GITHUB_USER = "akihololivo"
+# 💡 ユーザー名をあなたの本物の「akololivo」に修正
+GITHUB_USER = "akololivo"
 GITHUB_REPO = "pachislot-analysis"
 
-BASE_API_URL = f"https://github.com{GITHUB_USER}/{GITHUB_REPO}/contents/data"
-RAW_URL_BASE = f"https://githubusercontent.com{GITHUB_USER}/{GITHUB_REPO}/main/data"
+# 💡 【核心の修正】://github.com の後ろに、確実にスラッシュ「/」を挟み込む正しい固定URLに直しました！
+BASE_API_URL = "https://://github.com/repos/" + GITHUB_USER + "/" + GITHUB_REPO + "/contents/data"
+RAW_URL_BASE = "https://githubusercontent.com" + GITHUB_USER + "/" + GITHUB_REPO + "/main/data"
 
 def to_k_notation(val):
     return "0" if val == 0 else f"{val/1000:+.1f}k".replace(".0k", "k")
@@ -34,9 +35,7 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
     with st.spinner(f"⏳ ネット上の【{selected_shop}】フォルダから最新10日分のデータを取得中..."):
         try:
             encoded_shop = quote(selected_shop)
-            
-            # 正しいユーザー名でGitHubからファイル名の一覧をスキャン
-            list_url = f"https://github.com{GITHUB_USER}/{GITHUB_REPO}/contents/data/{encoded_shop}"
+            list_url = BASE_API_URL + "/" + encoded_shop
             res = requests.get(list_url)
             
             target_files = []
@@ -46,7 +45,6 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
                 txt_files.sort(reverse=True)
                 target_files = txt_files[:10]
             else:
-                # 🛠️ バックアップロジック：画像にあった2026年08月の10日間のファイル名を直接狙い撃ち
                 base_dates = [f"202608{str(i).zfill(2)}.txt" for i in range(3, 13)]
                 target_files = sorted(base_dates, reverse=True)
 
@@ -57,7 +55,7 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
             for fname in target_files:
                 day_num = day_mapping[fname]
                 encoded_fname = quote(fname)
-                file_raw_url = f"https://githubusercontent.com{GITHUB_USER}/{GITHUB_REPO}/main/data/{encoded_shop}/{encoded_fname}"
+                file_raw_url = RAW_URL_BASE + "/" + encoded_shop + "/" + encoded_fname
                 
                 file_res = requests.get(file_raw_url)
                 if file_res.status_code == 200:
