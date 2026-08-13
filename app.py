@@ -7,12 +7,6 @@ st.set_page_config(page_title="パチスロ 10日間データ一括分析ツー�
 st.title("🎰 パチスロ：複数店舗対応 10日間一括分析ツール（Web全自動版）")
 st.markdown("GitHub内の各店舗フォルダから最新10日分のデータを自動で取得し、一括クロス分析を行います！")
 
-# 💡 【最終修正】バグの原因になる改行や組み合わせを一切やめ、正しいフルURLを直接1行で固定しました！
-RAW_URL_BASE = "https://githubusercontent.com"
-
-def to_k_notation(val):
-    return "0" if val == 0 else f"{val/1000:+.1f}k".replace(".0k", "k")
-
 shop_list = ["アイランド秋葉原店", "エクサファースト", "エスパス秋葉原店"]
 selected_shop = st.selectbox("🏢 分析する店舗を選択してください", shop_list)
 
@@ -29,9 +23,7 @@ current_shop_key = f'web_data_{selected_shop}'
 if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキャン", type="primary"):
     with st.spinner(f"⏳ ネット上の【{selected_shop}】フォルダから最新10日分のデータを取得中..."):
         try:
-            encoded_shop = quote(selected_shop)
-            
-            # 💡 あなたがGitHubに入れた「03日〜12日」の10個のファイル名を直接ダウンロードしに行きます
+            # 💡 画像で確認できている2026年08月の10日間のファイル名を直接狙い撃ち
             target_files = [f"202608{str(i).zfill(2)}.txt" for i in range(3, 13)]
             target_files.sort(reverse=True)
             
@@ -41,10 +33,11 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
             
             for fname in target_files:
                 day_num = day_mapping[fname]
+                encoded_shop = quote(selected_shop)
                 encoded_fname = quote(fname)
                 
-                # 🛠️ 1本の間違いのない正しいダウンロード用アドレスをダイレクトに組み立てます！
-                file_raw_url = f"{RAW_URL_BASE}/{encoded_shop}/{encoded_fname}"
+                # 🛠️ 【核心の修正】バグの起きる変数をすべて排除し、1本の間違いのない正しいダウンロードURLをダイレクトに指定！
+                file_raw_url = "https://githubusercontent.com" + encoded_shop + "/" + encoded_fname
                 
                 file_res = requests.get(file_raw_url)
                 if file_res.status_code == 200:
