@@ -11,7 +11,6 @@ def to_k_notation(val):
 
 st.write("---")
 
-# 📂 【Web対応】ファイルを画面から直接アップロード（最大10個まで）
 uploaded_files = st.file_uploader(
     "📂 分析したいテキストファイル（.txt）を最大10個まとめて選択してください", 
     type=["txt"], 
@@ -22,7 +21,6 @@ if not uploaded_files:
     st.info("💡 テキストファイルがアップロードされるのを待っています。ファイルを上の枠にドロップしてください。")
     st.stop()
 
-# 🔍 絞り込み設定のUI
 col1, col2 = st.columns(2)
 with col1:
     min_coin = st.selectbox(
@@ -34,8 +32,6 @@ with col1:
 with col2:
     analysis_mode = st.radio("🔍 分析フォーカス", ["据え置き狙い（連続プラス台）", "設定上げ狙い（連続凹み台）"], horizontal=True)
 
-# 🔄 読み込んだファイルの処理
-# ファイル名で並び替えて最新順にする（例: 20261025.txt 基準で降順）
 sorted_files = sorted(uploaded_files, key=lambda x: x.name, reverse=True)
 sorted_files = sorted_files[:10]
 
@@ -46,7 +42,6 @@ all_data, unique_machines = {}, set()
 
 for file in sorted_files:
     day_num = day_mapping[file.name]
-    # Web版用にファイルオブジェクトからテキストをデコードして読み込み
     content = file.read().decode("utf-8", errors="ignore")
     lines = content.split("\n")
     
@@ -137,13 +132,14 @@ if table_rows:
     target_table_num = None
     target_machine_name = ""
     
+    # 💡 Web環境特有のバグを完全回避：文字列（"台番号_num"）での指定を一切やめ、0からの連番位置（iloc）のみで安全に値を取得
     if selected_rows and "rows" in selected_rows["selection"] and selected_rows["selection"]["rows"]:
-        row_idx = selected_rows["selection"]["rows"]
+        row_idx = selected_rows["selection"]["rows"][0]
         target_table_num = int(df_clean.iloc[row_idx]["台番号_num"])
         target_machine_name = str(df_clean.iloc[row_idx]["機種名"])
     else:
-        target_table_num = int(df_clean.iloc["台番号_num"])
-        target_machine_name = str(df_clean.iloc["機種名"])
+        target_table_num = int(df_clean.iloc[0]["台番号_num"])
+        target_machine_name = str(df_clean.iloc[0]["機種名"])
     
     if target_table_num:
         st.write("---")
