@@ -14,12 +14,12 @@ with col2:
     analysis_mode = st.radio("🔍 分析フォーカス", ["据え置き狙い（連続プラス台）", "設定上げ狙い（連続凹み台）"], horizontal=True)
 
 st.write("---")
+current_shop_key = 'island_all_data'
 
 if st.button("🔄 アイランド秋葉原店のデータを一括スキャン", type="primary"):
     with st.spinner("⏳ ネット上のフォルダからデータを取得中..."):
         try:
-            # 💡 【究極のファクト修正】あなたのGitHubに現実に存在する「確定している過去のファイル名」だけを1枚ずつ直撃します！
-            # ※存在しない「12日」や「13日」を自動計算で探しに行くのを完全にストップしました！
+            # 💡 あなたのGitHubに現実に存在する「確定している過去のファイル名」だけを1枚ずつ直撃します！
             target_files = [
                 "20260810.txt", "20260809.txt", "20260808.txt", "20260807.txt",
                 "20260806.txt", "20260805.txt", "20260804.txt", "20260803.txt"
@@ -32,7 +32,7 @@ if st.button("🔄 アイランド秋葉原店のデータを一括スキャン"
             for fname in target_files:
                 day_num = day_mapping[fname]
                 
-                # 🛠️ カッコや変数を一切使わず、1本の間違いのない「アイランド秋葉原店」専用URLを直接1行で完全固定！
+                # 🛠️ 1本の間違いのない「アイランド秋葉原店」専用URLを直接1行で完全固定！
                 file_raw_url = "https://githubusercontent.com" + fname
                 
                 file_res = requests.get(file_raw_url)
@@ -44,7 +44,9 @@ if st.button("🔄 アイランド秋葉原店のデータを一括スキャン"
                         if not line or "機種" in line or "台番" in line: continue
                         parts = re.split(r'\t+|\s{2,}', line)
                         if len(parts) >= 3:
-                            name, table_text, coin_text = parts[0].strip(), parts[1].strip(), parts[2].strip()
+                            name = parts[0].strip()
+                            table_text = parts[1].strip()
+                            coin_text = parts[2].strip()
                             clean_coin = coin_text.replace("枚", "").replace(",", "").replace("+", "").strip()
                             try:
                                 coin, table_num = int(clean_coin), int(table_text)
@@ -112,10 +114,11 @@ if "island_all_data" in st.session_state:
         if show_this_table:
             total_days = plus_days + minus_days
             avg_coin = int(total_coin / total_days) if total_days > 0 else 0
+            # 💡 【重要修正】"10日平均差枚" の後ろをコロン(:)に修正しました！
             table_rows.append({
                 "rank_score": rank_score, "台番号_num": table_num, "台番号": f"{table_num}番", "機種名": info["name"],
                 "ステータス": star, "前日差枚": latest_coin, "10日間累計": total_coin, "勝率履歴_勝数": int(plus_days),
-                "勝率履歴": f"{plus_days}勝/{minus_days}敗", "10日平均差枚", avg_coin, "10日間のデータ推移(新しい順)": history_flow_short
+                "勝率履歴": f"{plus_days}勝/{minus_days}敗", "10日平均差枚": avg_coin, "10日間のデータ推移(新しい順)": history_flow_short
             })
             
     if table_rows:
