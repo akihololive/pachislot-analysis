@@ -8,8 +8,8 @@ st.title("🎰 パチスロ：複数店舗対応 10日間一括分析ツール�
 st.markdown("GitHub内の各店舗フォルダから最新10日分のデータを自動で取得し、一括クロス分析を行います！")
 
 # 💡 アカウント名「akololivo」で100%固定された正しいURLです！
-BASE_API_URL = "https://github.com"
-RAW_URL_BASE = "https://githubusercontent.com"
+BASE_API_URL = "github.com"
+RAW_URL_BASE = "githubusercontent.com"
 
 def to_k_notation(val):
     return "0" if val == 0 else f"{val/1000:+.1f}k".replace(".0k", "k")
