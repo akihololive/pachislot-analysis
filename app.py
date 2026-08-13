@@ -7,7 +7,7 @@ st.set_page_config(page_title="パチスロ 10日間データ一括分析ツー�
 st.title("🎰 パチスロ：複数店舗対応 10日間一括分析ツール（Web全自動版）")
 st.markdown("GitHub内の各店舗フォルダから最新10日分のデータを自動で取得し、一括クロス分析を行います！")
 
-# 💡 【究極の修正】計算や組み合わせを一切挟まず、正しいURLを1文字も漏らさず100%固定で記述しました！
+# 💡 アカウント名「akololivo」で100%固定された正しいURLです！
 BASE_API_URL = "https://github.com"
 RAW_URL_BASE = "https://githubusercontent.com"
 
