@@ -4,17 +4,35 @@ import streamlit as st
 import pandas as pd
 
 st.set_page_config(page_title="パチスロ 10日間データ一括分析ツール", page_icon="🎰", layout="wide")
-st.title("🎰 パチスロ：10日間データ一括分析ツール（Web全自動版）")
-st.markdown("GitHubの `data` フォルダ内から最新10日分のデータを自動で取得し、一括クロス分析を行います！")
+st.title("🎰 パチスロ：複数店舗対応 10日間一括分析ツール（Web全自動版）")
+st.markdown("GitHub内の各店舗フォルダから最新10日分のデータを自動で取得し、一括クロス分析を行います！")
 
-# 🔗 あなたのGitHubのデータをネット経由で読み込むための設定
 GITHUB_USER = "akihololive"
 GITHUB_REPO = "pachislot-analysis"
-API_URL = f"https://github.com{GITHUB_USER}/{GITHUB_REPO}/contents/data"
+BASE_API_URL = f"https://github.com{GITHUB_USER}/{GITHUB_REPO}/contents/data"
 RAW_URL_BASE = f"https://githubusercontent.com{GITHUB_USER}/{GITHUB_REPO}/main/data"
 
 def to_k_notation(val):
     return "0" if val == 0 else f"{val/1000:+.1f}k".replace(".0k", "k")
+
+# 🏢 1. 存在する店舗フォルダのリストをGitHubから自動取得
+try:
+    res = requests.get(BASE_API_URL)
+    if res.status_code == 200:
+        contents = res.json()
+        # ディレクトリ（フォルダ）だけを抽出して店舗リストにする
+        shop_list = sorted([c["name"] for c in contents if c["type"] == "dir"])
+    else:
+        shop_list = []
+except Exception:
+    shop_list = []
+
+# 万が一フォルダが取得できない場合のバックアップ表記
+if not shop_list:
+    shop_list = ["アイランド秋葉原店", "エクサファースト", "エスパス秋葉原店"]
+
+# 🏢 店舗選択のUI
+selected_shop = st.selectbox("🏢 分析する店舗を選択してください", shop_list)
 
 st.write("---")
 
@@ -32,35 +50,34 @@ with col2:
 
 st.write("---")
 
-# 🚀 ボタン1回で全自動スキャンスタート！
-if st.button("🔄 GitHubの data フォルダから最新データを一括自動スキャン", type="primary"):
-    with st.spinner("⏳ ネット上のフォルダから最新10日分のデータを取得中..."):
+current_shop_key = f'web_data_{selected_shop}'
+
+# 🚀 ボタン1回で選択した店舗の全自動スキャンスタート！
+if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキャン", type="primary"):
+    with st.spinner(f"⏳ ネット上の【{selected_shop}】フォルダから最新10日分のデータを取得中..."):
         try:
-            # 1. GitHub APIを使って data フォルダ内のファイル一覧を取得
-            res = requests.get(API_URL)
+            shop_api_url = f"{BASE_API_URL}/{selected_shop}"
+            res = requests.get(shop_api_url)
             if res.status_code != 200:
-                st.error("❌ GitHubの data フォルダにアクセスできませんでした。フォルダが作成されているか確認してください。")
+                st.error(f"❌ GitHubの {selected_shop} フォルダにアクセスできませんでした。")
                 st.stop()
                 
             files_data = res.json()
-            # .txt ファイルだけを抜き出し、ファイル名で並び替えて最新順にする
             txt_files = [f["name"] for f in files_data if f["name"].endswith(".txt")]
             
             if not txt_files:
-                st.warning("⚠️ data フォルダの中にテキストファイル（.txt）が1つも見つかりません。ファイルをアップロードしてください。")
+                st.warning(f"⚠️ {selected_shop} フォルダの中にテキストファイル（.txt）が1つも見つかりません。")
                 st.stop()
                 
             txt_files.sort(reverse=True)
             target_files = txt_files[:10]
             
             day_mapping = {fname: (index + 1) for index, fname in enumerate(target_files)}
-            
             all_data, unique_machines = {}, set()
             
-            # 2. 最新10個のファイルをネット経由で1つずつ自動読み込み
             for fname in target_files:
                 day_num = day_mapping[fname]
-                file_raw_url = f"{RAW_URL_BASE}/{fname}"
+                file_raw_url = f"{RAW_URL_BASE}/{selected_shop}/{fname}"
                 
                 file_res = requests.get(file_raw_url)
                 if file_res.status_code == 200:
@@ -72,9 +89,9 @@ if st.button("🔄 GitHubの data フォルダから最新データを一括自�
                         if not line or "機種" in line or "台番" in line: continue
                         parts = re.split(r'\t+|\s{2,}', line)
                         if len(parts) >= 3:
-                            name = parts[0].strip()
-                            table_text = parts[1].strip()
-                            coin_text = parts[2].strip()
+                            name = parts.strip()
+                            table_text = parts.strip()
+                            coin_text = parts.strip()
                             clean_coin = coin_text.replace("枚", "").replace(",", "").replace("+", "").strip()
                             try:
                                 coin, table_num = int(clean_coin), int(table_text)
@@ -83,25 +100,25 @@ if st.button("🔄 GitHubの data フォルダから最新データを一括自�
                                 unique_machines.add(name)
                             except ValueError: continue
             
-            # セッション状態にデータをキャッシュ
-            st.session_state["web_all_data"] = all_data
-            st.session_state["web_unique_machines"] = sorted(list(unique_machines))
-            st.session_state["web_target_files"] = target_files
-            st.session_state[f"web_day_mapping"] = day_mapping
-            st.success("✅ 最新10日分のデータスキャンに成功しました！")
+            # 店舗ごとにセッション情報を記憶
+            st.session_state[current_shop_key] = all_data
+            st.session_state[f"web_machines_{selected_shop}"] = sorted(list(unique_machines))
+            st.session_state[f"web_files_{selected_shop}"] = target_files
+            st.session_state[f"web_mapping_{selected_shop}"] = day_mapping
+            st.success(f"✅ 【{selected_shop}】の最新データスキャンに成功しました！")
             
         except Exception as e:
             st.error(f"❌ エラーが発生しました: {str(e)}")
 
 # 🎯 データ表示部分
-if "web_all_data" in st.session_state:
-    all_data = st.session_state["web_all_data"]
-    unique_machines = st.session_state["web_unique_machines"]
-    target_files = st.session_state["web_target_files"]
-    day_mapping = st.session_state["web_day_mapping"]
+if current_shop_key in st.session_state:
+    all_data = st.session_state[current_shop_key]
+    unique_machines = st.session_state[f"web_machines_{selected_shop}"]
+    target_files = st.session_state[f"web_files_{selected_shop}"]
+    day_mapping = st.session_state[f"web_mapping_{selected_shop}"]
     
     selected_machine = st.selectbox("🎯 機種名でピンポイント絞り込み", ["✨ すべての機種"] + unique_machines)
-    st.write(f"## 🏆 スキャンデータ：分析結果")
+    st.write(f"## 🏆 【{selected_shop}】分析結果")
     
     table_rows = []
     for table_num, info in all_data.items():
@@ -207,4 +224,4 @@ if "web_all_data" in st.session_state:
     else:
         st.info("😭 条件に合う台は見つかりませんでした。")
 else:
-    st.info("☝️ 上の「最新データを一括自動スキャン」ボタンを押すと、自動的に分析が始まります！")
+    st.info(f"☝️ 上の「【{selected_shop}】の最新データを一括自動スキャン」ボタンを押すと、自動的に分析が始まります！")
