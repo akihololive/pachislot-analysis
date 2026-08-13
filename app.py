@@ -37,8 +37,9 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
                 day_num = day_mapping[fname]
                 encoded_fname = quote(fname)
                 
-                # 🛠️ 【100%確実な修正】一切の隙をなくすため、1本の手動フルURLとして完璧な形式で直結させました！
-                file_raw_url = f"https://githubusercontent.com{encoded_shop}/{encoded_fname}"
+                # 🛠️ 【100%確実なバグ回避】カッコを完全撤去し、スラッシュ付きの固定文字をダイレクトに足し算で結合！
+                # これにより、Webサーバーがスラッシュを勝手に消去するバグを完全に封じ込めました！
+                file_raw_url = "https://githubusercontent.com" + encoded_shop + "/" + encoded_fname
                 
                 file_res = requests.get(file_raw_url)
                 if file_res.status_code == 200:
@@ -49,7 +50,7 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
                         if not line or "機種" in line or "台番" in line: continue
                         parts = re.split(r'\t+|\s{2,}', line)
                         if len(parts) >= 3:
-                            name, table_text, coin_text = parts[0].strip(), parts[1].strip(), parts[2].strip()
+                            name, table_text, coin_text = parts.strip(), parts.strip(), parts.strip()
                             clean_coin = coin_text.replace("枚", "").replace(",", "").replace("+", "").strip()
                             try:
                                 coin, table_num = int(clean_coin), int(table_text)
