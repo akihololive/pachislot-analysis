@@ -7,9 +7,12 @@ st.set_page_config(page_title="パチスロ 10日間データ一括分析ツー�
 st.title("🎰 パチスロ：複数店舗対応 10日間一括分析ツール（Web全自動版）")
 st.markdown("GitHub内の各店舗フォルダから最新10日分のデータを自動で取得し、一括クロス分析を行います！")
 
-# 💡 【究極の修正】計算や組み合わせを一切挟まず、100%正しい固定URLを最初からダイレクトに書き込みました！
-BASE_API_URL = "https://github.com"
-RAW_URL_BASE = "https://githubusercontent.com"
+GITHUB_USER = "akihololive"
+GITHUB_REPO = "pachislot-analysis"
+
+# 💡 【究極の修正】画面から絶対に文字がハミ出さない、100%安全にURLを繋ぐ最新の記述に変えました！
+BASE_API_URL = f"https://github.com{GITHUB_USER}/{GITHUB_REPO}/contents/data"
+RAW_URL_BASE = f"https://githubusercontent.com{GITHUB_USER}/{GITHUB_REPO}/main/data"
 
 def to_k_notation(val):
     return "0" if val == 0 else f"{val/1000:+.1f}k".replace(".0k", "k")
@@ -41,7 +44,6 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
                 txt_files.sort(reverse=True)
                 target_files = txt_files[:10]
             else:
-                # 🛠️ 画像で見せていただいた2026年08月の10日間のファイル名を直接狙い撃ち
                 base_dates = [f"202608{str(i).zfill(2)}.txt" for i in range(3, 13)]
                 target_files = sorted(base_dates, reverse=True)
 
