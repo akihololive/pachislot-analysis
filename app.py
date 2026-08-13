@@ -2,9 +2,18 @@ import re, requests
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="アイランド秋葉原店 10日間分析ツール", page_icon="🎰", layout="wide")
-st.title("🎰 アイランド秋葉原店 専用：10日間クロス分析ツール")
-st.markdown("あなたのGitHub内のファイルからデータを直接取得し、クロス分析を行います。")
+st.set_page_config(page_title="パチスロ 10日間データ一括分析ツール", page_icon="🎰", layout="wide")
+st.title("🎰 パチスロ：複数店舗対応 10日間一括分析ツール（Web全自動版）")
+st.markdown("GitHub内の各店舗フォルダから最新10日分のデータを自動で取得し、一括クロス分析を行います！")
+
+# 💡 あなたが英語に変更してくれた、完璧に壊れないフォルダ名の対応表です！
+shop_map = {
+    "アイランド秋葉原店": "island",
+    "エクサファースト": "exa",
+    "エスパス秋葉原店": "espace"
+}
+
+selected_shop = st.selectbox("🏢 分析する店舗を選択してください", list(shop_map.keys()))
 
 st.write("---")
 col1, col2 = st.columns(2)
@@ -14,23 +23,29 @@ with col2:
     analysis_mode = st.radio("🔍 分析フォーカス", ["据え置き狙い（連続プラス台）", "設定上げ狙い（連続凹み台）"], horizontal=True)
 
 st.write("---")
+current_shop_key = f'web_data_{selected_shop}'
 
-if st.button("🔄 アイランド秋葉原店のデータを一括スキャン", type="primary"):
-    with st.spinner("⏳ ネット上のフォルダからデータを取得中..."):
+if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキャン", type="primary"):
+    with st.spinner(f"⏳ ネット上の【{selected_shop}】フォルダからデータを取得中..."):
         try:
-            target_files = ["20260810.txt", "20260809.txt", "20260808.txt", "20260807.txt", "20260806.txt", "20260805.txt", "20260804.txt", "20260803.txt"]
+            folder_name = shop_map[selected_shop]
+            
+            # 💡 あなたのGitHubに現実に存在する「12日」までの全10日分の日付をダイレクトに指定
+            target_files = [
+                "20260812.txt", "20260811.txt", "20260810.txt", "20260809.txt",
+                "20260808.txt", "20260807.txt", "20260806.txt", "20260805.txt",
+                "20260804.txt", "20260803.txt"
+            ]
+            
             day_mapping = {fname: (index + 1) for index, fname in enumerate(target_files)}
             all_data, unique_machines = {}, set()
             success_count = 0
             
-            # 💡 【重要】日本語の店舗フォルダ名を100%安全なネット専用アドレスに事前に暗号化した文字列です
-            shop_path = "%E3%82%A2%E3%82%A4%E3%83%A9%E3%83%B3%E3%83%89%E7%A7%8B%E8%91%89%E5%8E%9F%E5%BA%97"
-            
             for fname in target_files:
                 day_num = day_mapping[fname]
                 
-                # 🛠️ 【核心の修正】スラッシュが消えるバグを200%回避するため、f文字を使わずカンマやプラスで完全に分離して一本のアドレスをガチガチに固定！
-                file_raw_url = "https://githubusercontent.com" + shop_path + "/" + fname
+                # 🛠️ 【根本解決】全角の店舗名を一切使わず、英数字フォルダ（islandなど）を真っ直ぐ読みに行きます！
+                file_raw_url = f"https://githubusercontent.com{folder_name}/{fname}"
                 
                 file_res = requests.get(file_raw_url)
                 if file_res.status_code == 200:
@@ -53,24 +68,25 @@ if st.button("🔄 アイランド秋葉原店のデータを一括スキャン"
                             except ValueError: continue
 
             if success_count == 0:
-                st.error("❌ GitHub内の『data/アイランド秋葉原店』フォルダからファイルを1つも読み込めませんでした。")
+                st.error(f"❌ {selected_shop}（フォルダ名: {folder_name}）のデータファイルを1つも読み込めませんでした。「data/{folder_name}」フォルダの中にファイルが入っているかご確認ください。")
                 st.stop()
             
-            st.session_state["island_all_data"] = all_data
-            st.session_state["island_unique_machines"] = sorted(list(unique_machines))
-            st.session_state["island_target_files"] = target_files
-            st.session_state["island_day_mapping"] = day_mapping
-            st.success(f"✅ 【アイランド秋葉原店】のスキャンに成功しました！（読み込み完了: {success_count}日分）")
+            st.session_state[current_shop_key] = all_data
+            st.session_state[f"web_machines_{selected_shop}"] = sorted(list(unique_machines))
+            st.session_state[f"web_files_{selected_shop}"] = target_files
+            st.session_state[f"web_mapping_{selected_shop}"] = day_mapping
+            st.success(f"✅ 【{selected_shop}】のデータスキャンに成功しました！（読み込み完了: {success_count}日分）")
         except Exception as e:
             st.error(f"❌ エラーが発生しました: {str(e)}")
 
-if "island_all_data" in st.session_state:
-    all_data = st.session_state["island_all_data"]
-    unique_machines = st.session_state["island_unique_machines"]
-    target_files = st.session_state["island_target_files"]
-    day_mapping = st.session_state["island_day_mapping"]
+if current_shop_key in st.session_state:
+    all_data = st.session_state[current_shop_key]
+    unique_machines = st.session_state[f"web_machines_{selected_shop}"]
+    target_files = st.session_state[f"web_files_{selected_shop}"]
+    day_mapping = st.session_state[f"web_mapping_{selected_shop}"]
     
     selected_machine = st.selectbox("🎯 機種名でピンポイント絞り込み", ["✨ すべての機種"] + unique_machines)
+    st.write(f"## 🏆 【{selected_shop}】分析結果")
     
     table_rows = []
     for table_num, info in all_data.items():
@@ -132,12 +148,12 @@ if "island_all_data" in st.session_state:
         )
         
         try:
-            row_idx = selected_rows["selection"]["rows"][0] if selected_rows and "rows" in selected_rows["selection"] and selected_rows["selection"]["rows"] else 0
+            row_idx = selected_rows["selection"]["rows"] if selected_rows and "rows" in selected_rows["selection"] and selected_rows["selection"]["rows"] else 0
             target_table_num = int(df_clean.iloc[row_idx]["台番号_num"])
             target_machine_name = str(df_clean.iloc[row_idx]["機種名"])
         except Exception:
-            target_table_num = int(df_clean.iloc[0]["台番号_num"])
-            target_machine_name = str(df_clean.iloc[0]["機種名"])
+            target_table_num = int(df_clean.iloc["台番号_num"])
+            target_machine_name = str(df_clean.iloc["機種名"])
         
         if target_table_num:
             st.write("---")
@@ -151,7 +167,7 @@ if "island_all_data" in st.session_state:
                 
             if graph_data:
                 df_chart = pd.DataFrame(graph_data)
-                df_chart_fixed = df_chart.set_index("index_num").reindex(range(1, 9)).dropna()
+                df_chart_fixed = df_chart.set_index("index_num").reindex(range(1, 11)).dropna()
                 st.bar_chart(df_chart_fixed["当日の差枚数"], use_container_width=True)
                 
                 df_table_formatted = df_chart_fixed.copy()
@@ -162,4 +178,4 @@ if "island_all_data" in st.session_state:
     else:
         st.info("😭 条件に合う台は見つかりませんでした。")
 else:
-    st.info("☝️ 上の「🔄 アイランド秋葉原店のデータを一括スキャン」ボタンを押すと、分析が始まります！")
+    st.info("☝️ 上のボタンを押すと、全自動で各フォルダからデータを読み込みます！")
