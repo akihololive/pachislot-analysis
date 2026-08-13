@@ -11,6 +11,7 @@ st.markdown("GitHub内の各店舗フォルダから最新10日分のデータ�
 BASE_API_URL = "https://github.com"
 RAW_URL_BASE = "https://githubusercontent.com"
 
+
 def to_k_notation(val):
     return "0" if val == 0 else f"{val/1000:+.1f}k".replace(".0k", "k")
 
