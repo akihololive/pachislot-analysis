@@ -7,12 +7,17 @@ st.set_page_config(page_title="パチスロ 10日間データ一括分析ツー�
 st.title("🎰 パチスロ：複数店舗対応 10日間一括分析ツール（Web全自動版）")
 st.markdown("GitHub内の各店舗フォルダから最新10日分のデータを自動で取得し、一括クロス分析を行います！")
 
-GITHUB_USER = "akihololive"
+# 💡 【重要修正】アカウント名のスペルを「akihololivo」に完全に修正しました！
+GITHUB_USER = "akihololivo"
 GITHUB_REPO = "pachislot-analysis"
 
-# 💡 フォルダの一覧がうまく取得できない場合は、あなたが作った3つの店舗名をそのまま固定で使用します（確実！）
-shop_list = ["アイランド秋葉原店", "エクサファースト", "エスパス秋葉原店"]
+BASE_API_URL = f"https://github.com{GITHUB_USER}/{GITHUB_REPO}/contents/data"
+RAW_URL_BASE = f"https://githubusercontent.com{GITHUB_USER}/{GITHUB_REPO}/main/data"
 
+def to_k_notation(val):
+    return "0" if val == 0 else f"{val/1000:+.1f}k".replace(".0k", "k")
+
+shop_list = ["アイランド秋葉原店", "エクサファースト", "エスパス秋葉原店"]
 selected_shop = st.selectbox("🏢 分析する店舗を選択してください", shop_list)
 
 st.write("---")
@@ -30,12 +35,10 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
         try:
             encoded_shop = quote(selected_shop)
             
-            # 💡 【重要変更】セキュリティの厳しい関所（API）を完全に迂回し、公開データから直接ファイルを探す超安定ロジック
-            # 1. あなたのGitHubからファイル名の一覧を直接力技でスキャン
+            # 正しいユーザー名でGitHubからファイル名の一覧をスキャン
             list_url = f"https://github.com{GITHUB_USER}/{GITHUB_REPO}/contents/data/{encoded_shop}"
             res = requests.get(list_url)
             
-            # 万が一API制限（404等）がかかった場合でも、アップロードされている日付（直近10日分）を自動推測して直接アタックするバックアップ処理を搭載！
             target_files = []
             if res.status_code == 200:
                 files_data = res.json()
@@ -43,8 +46,7 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
                 txt_files.sort(reverse=True)
                 target_files = txt_files[:10]
             else:
-                # 🛠️ バックアップロジック：先ほど画像で見せていただいた2026年08月の直近10日間のファイル名を直接狙い撃ちします
-                # ※これで404エラーを100%回避してデータを強制的に吸い出せます！
+                # 🛠️ バックアップロジック：画像にあった2026年08月の10日間のファイル名を直接狙い撃ち
                 base_dates = [f"202608{str(i).zfill(2)}.txt" for i in range(3, 13)]
                 target_files = sorted(base_dates, reverse=True)
 
@@ -66,7 +68,7 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
                         if not line or "機種" in line or "台番" in line: continue
                         parts = re.split(r'\t+|\s{2,}', line)
                         if len(parts) >= 3:
-                            name, table_text, coin_text = parts[0].strip(), parts[1].strip(), parts[2].strip()
+                            name, table_text, coin_text = parts.strip(), parts.strip(), parts.strip()
                             clean_coin = coin_text.replace("枚", "").replace(",", "").replace("+", "").strip()
                             try:
                                 coin, table_num = int(clean_coin), int(table_text)
@@ -76,7 +78,7 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
                             except ValueError: continue
 
             if success_count == 0:
-                st.error(f"❌ {selected_shop} のデータファイルを1つも読み込めませんでした。GitHubへのアップロードが完了しているか再度ご確認ください。")
+                st.error(f"❌ {selected_shop} のデータファイルを1つも読み込めませんでした。")
                 st.stop()
             
             st.session_state[current_shop_key] = all_data
