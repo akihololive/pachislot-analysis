@@ -7,7 +7,7 @@ st.set_page_config(page_title="パチスロ 10日間データ一括分析ツー�
 st.title("🎰 パチスロ：複数店舗対応 10日間一括分析ツール（Web全自動版）")
 st.markdown("GitHub内の各店舗フォルダから最新10日分のデータを自動で取得し、一括クロス分析を行います！")
 
-# 💡 【真の最終確定】正しいアカウント名「akihololive」で完璧に固定しました！
+# 💡 【重要】あなたのアカウント名「akihololive」に完全に差し替えました！
 GITHUB_USER = "akihololive"
 GITHUB_REPO = "pachislot-analysis"
 
@@ -35,7 +35,7 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
         try:
             encoded_shop = quote(selected_shop)
             
-            # 1. GitHubからファイル一覧をスキャン
+            # 1. 正しいアカウント名でGitHubからファイル一覧をスキャン
             list_url = f"{BASE_API_URL}/{encoded_shop}"
             res = requests.get(list_url)
             
@@ -46,7 +46,7 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
                 txt_files.sort(reverse=True)
                 target_files = txt_files[:10]
             else:
-                # API経由で取得できない場合の直接アタック（2026年08月の10日間）
+                # バックアップ処理
                 base_dates = [f"202608{str(i).zfill(2)}.txt" for i in range(3, 13)]
                 target_files = sorted(base_dates, reverse=True)
 
@@ -68,7 +68,7 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
                         if not line or "機種" in line or "台番" in line: continue
                         parts = re.split(r'\t+|\s{2,}', line)
                         if len(parts) >= 3:
-                            name, table_text, coin_text = parts[0].strip(), parts[1].strip(), parts[2].strip()
+                            name, table_text, coin_text = parts.strip(), parts.strip(), parts.strip()
                             clean_coin = coin_text.replace("枚", "").replace(",", "").replace("+", "").strip()
                             try:
                                 coin, table_num = int(clean_coin), int(table_text)
@@ -162,8 +162,8 @@ if current_shop_key in st.session_state:
             target_table_num = int(df_clean.iloc[row_idx]["台番号_num"])
             target_machine_name = str(df_clean.iloc[row_idx]["機種名"])
         except Exception:
-            target_table_num = int(df_clean.iloc[0]["台番号_num"])
-            target_machine_name = str(df_clean.iloc[0]["機種名"])
+            target_table_num = int(df_clean.iloc["台番号_num"])
+            target_machine_name = str(df_clean.iloc["機種名"])
         
         if target_table_num:
             st.write("---")
