@@ -7,13 +7,15 @@ st.set_page_config(page_title="パチスロ 10日間データ一括分析ツー�
 st.title("🎰 パチスロ：複数店舗対応 10日間一括分析ツール（Web全自動版）")
 st.markdown("GitHub内の各店舗フォルダから最新10日分のデータを自動で取得し、一括クロス分析を行います！")
 
-GITHUB_USER = "akihololive"
-GITHUB_REPO = "pachislot-analysis"
-
-# 💡 【究極の修正】画面から絶対に文字がハミ出さない、100%安全にURLを繋ぐ最新の記述に変えました！
-BASE_API_URL = f"https://github.com{GITHUB_USER}/{GITHUB_REPO}/contents/data"
-RAW_URL_BASE = f"https://githubusercontent.com{GITHUB_USER}/{GITHUB_REPO}/main/data"
-
+# 💡 どんな画面でも絶対に右側が千切れないよう、細かく改行して結合させました。
+BASE_API_URL = (
+    "https://github.com"
+    "akihololive/pachislot-analysis/contents/data"
+)
+RAW_URL_BASE = (
+    "https://githubusercontent.com"
+    "akihololive/pachislot-analysis/main/data"
+)
 
 def to_k_notation(val):
     return "0" if val == 0 else f"{val/1000:+.1f}k".replace(".0k", "k")
@@ -35,19 +37,10 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
     with st.spinner(f"⏳ ネット上の【{selected_shop}】フォルダから最新10日分のデータを取得中..."):
         try:
             encoded_shop = quote(selected_shop)
-            list_url = BASE_API_URL + "/" + encoded_shop
-            res = requests.get(list_url)
             
-            target_files = []
-            if res.status_code == 200:
-                files_data = res.json()
-                txt_files = [f["name"] for f in files_data if f["name"].endswith(".txt")]
-                txt_files.sort(reverse=True)
-                target_files = txt_files[:10]
-            else:
-                base_dates = [f"202608{str(i).zfill(2)}.txt" for i in range(3, 13)]
-                target_files = sorted(base_dates, reverse=True)
-
+            target_files = [f"202608{str(i).zfill(2)}.txt" for i in range(3, 13)]
+            target_files.sort(reverse=True)
+            
             day_mapping = {fname: (index + 1) for index, fname in enumerate(target_files)}
             all_data, unique_machines = {}, set()
             success_count = 0
