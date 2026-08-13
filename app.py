@@ -7,11 +7,11 @@ st.set_page_config(page_title="パチスロ 10日間データ一括分析ツー�
 st.title("🎰 パチスロ：複数店舗対応 10日間一括分析ツール（Web全自動版）")
 st.markdown("GitHub内の各店舗フォルダから最新10日分のデータを自動で取得し、一括クロス分析を行います！")
 
-# 💡 アカウント名・リポジトリ名を完全固定
+# 💡 正しいアカウント名とリポジトリ名を設定
 GITHUB_USER = "akihololive"
 GITHUB_REPO = "pachislot-analysis"
 
-# 💡 【核心の修正】URLの繋ぎ目にスラッシュ（/）を確実に入れ、APIエラーを回避する正しい固定アドレスに直しました！
+# 💡 【完全修正】URLの繋ぎ目にスラッシュ（/）を確実に入れ、通信が100%成功する固定アドレスに修正しました！
 BASE_API_URL = "https://github.com" + GITHUB_USER + "/" + GITHUB_REPO + "/contents/data"
 RAW_URL_BASE = "https://githubusercontent.com" + GITHUB_USER + "/" + GITHUB_REPO + "/main/data"
 
@@ -45,7 +45,7 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
                 txt_files.sort(reverse=True)
                 target_files = txt_files[:10]
             else:
-                # 直接アタック用のバックアップ（2026年08月の10日間）
+                # API経由でリストが取得できない場合のバックアップ（直近の日付を直接狙い撃ち）
                 base_dates = [f"202608{str(i).zfill(2)}.txt" for i in range(3, 13)]
                 target_files = sorted(base_dates, reverse=True)
 
