@@ -1,6 +1,7 @@
 import re, requests
 import streamlit as st
 import pandas as pd
+from urllib.parse import quote # 💡 日本語フォルダ名をネット用に変換するライブラリ
 
 st.set_page_config(page_title="パチスロ 10日間データ一括分析ツール", page_icon="🎰", layout="wide")
 st.title("🎰 パチスロ：複数店舗対応 10日間一括分析ツール（Web全自動版）")
@@ -21,7 +22,6 @@ try:
 except Exception:
     shop_list = []
 
-# 💡 【重要修正】「秋」の重複をきれいに修正し、実際のフォルダ名と完全に一致させました！
 if not shop_list:
     shop_list = ["アイランド秋葉原店", "エクサファースト", "エスパス秋葉原店"]
 
@@ -40,10 +40,13 @@ current_shop_key = f'web_data_{selected_shop}'
 if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキャン", type="primary"):
     with st.spinner(f"⏳ ネット上の【{selected_shop}】フォルダから最新10日分のデータを取得中..."):
         try:
-            shop_api_url = BASE_API_URL + "/" + selected_shop
+            # 💡 【重要修正】日本語のフォルダ名をネット通信用に100%安全な記号に自動変換します
+            encoded_shop = quote(selected_shop)
+            
+            shop_api_url = BASE_API_URL + "/" + encoded_shop
             res = requests.get(shop_api_url)
             if res.status_code != 200:
-                st.error(f"❌ GitHubの {selected_shop} フォルダにアクセスできません。")
+                st.error(f"❌ GitHubの {selected_shop} フォルダにアクセスできませんでした。（エラーコード: {res.status_code}）")
                 st.stop()
                 
             files_data = res.json()
@@ -59,7 +62,10 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
             
             for fname in target_files:
                 day_num = day_mapping[fname]
-                file_raw_url = RAW_URL_BASE + "/" + selected_shop + "/" + fname
+                # ファイル名も安全にエンコードしてURLを作成
+                encoded_fname = quote(fname)
+                file_raw_url = RAW_URL_BASE + "/" + encoded_shop + "/" + encoded_fname
+                
                 file_res = requests.get(file_raw_url)
                 if file_res.status_code == 200:
                     lines = file_res.text.split("\n")
@@ -172,7 +178,7 @@ if current_shop_key in st.session_state:
                 st.bar_chart(df_chart_fixed["当日の差枚数"], use_container_width=True)
                 
                 df_table_formatted = df_chart_fixed.copy()
-                df_table_formatted["当日の差枚数"] = df_table_formatted["当日の差枚数"].map(lambda x: f"{x:+,}" if x != 0 else "0")
+                df_table_formatted["当日の差枚数"] = df_table_formatted["当日の差bytes" if isinstance(df_table_formatted["当日の差枚数"], bytes) else "当日の差枚数"].map(lambda x: f"{x:+,}" if x != 0 else "0")
                 df_summary = df_table_formatted.T
                 df_summary.columns = [f"{col}日前" for col in df_summary.columns]
                 st.dataframe(df_summary, use_container_width=True)
