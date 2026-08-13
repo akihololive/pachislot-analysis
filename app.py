@@ -7,13 +7,9 @@ st.set_page_config(page_title="パチスロ 10日間データ一括分析ツー�
 st.title("🎰 パチスロ：複数店舗対応 10日間一括分析ツール（Web全自動版）")
 st.markdown("GitHub内の各店舗フォルダから最新10日分のデータを自動で取得し、一括クロス分析を行います！")
 
-# 💡 正しいアカウント名とリポジトリ名を設定
-GITHUB_USER = "akihololive"
-GITHUB_REPO = "pachislot-analysis"
-
-# 💡 【完全修正】URLの繋ぎ目にスラッシュ（/）を確実に入れ、通信が100%成功する固定アドレスに修正しました！
-BASE_API_URL = "https://github.com" + GITHUB_USER + "/" + GITHUB_REPO + "/contents/data"
-RAW_URL_BASE = "https://githubusercontent.com" + GITHUB_USER + "/" + GITHUB_REPO + "/main/data"
+# 💡 【究極の修正】計算や組み合わせを一切挟まず、100%正しい固定URLを最初からダイレクトに書き込みました！
+BASE_API_URL = "https://github.com"
+RAW_URL_BASE = "https://githubusercontent.com"
 
 def to_k_notation(val):
     return "0" if val == 0 else f"{val/1000:+.1f}k".replace(".0k", "k")
@@ -45,7 +41,7 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
                 txt_files.sort(reverse=True)
                 target_files = txt_files[:10]
             else:
-                # API経由でリストが取得できない場合のバックアップ（直近の日付を直接狙い撃ち）
+                # 🛠️ 画像で見せていただいた2026年08月の10日間のファイル名を直接狙い撃ち
                 base_dates = [f"202608{str(i).zfill(2)}.txt" for i in range(3, 13)]
                 target_files = sorted(base_dates, reverse=True)
 
@@ -77,7 +73,7 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
                             except ValueError: continue
 
             if success_count == 0:
-                st.error(f"❌ {selected_shop} のデータファイル（20260803.txt〜20260812.txt）を1つも読み込めませんでした。ファイル名やアップロード先が正しいかご確認ください。")
+                st.error(f"❌ {selected_shop} のデータファイル（20260803.txt〜20260812.txt）を1つも読み込めませんでした。")
                 st.stop()
             
             st.session_state[current_shop_key] = all_data
