@@ -156,10 +156,14 @@ if current_shop_key in st.session_state:
                 "勝率履歴": f"{plus_days}勝/{minus_days}敗", "10日平均差枚": avg_coin, "10日間のデータ推移(新しい順)": history_flow_short
             })
             
+        # 💡 モードに合わせて自動並び替え（据え置き＝勝率降順 / 設定上げ＝勝率昇順）
         if analysis_mode == "据え置き狙い（連続プラス台）":
             table_rows.sort(key=lambda x: (-int(x["勝率履歴"].split("勝")[0]), -x["10日間累計"], x["台番号_num"]))
         else:
             table_rows.sort(key=lambda x: (int(x["勝率履歴"].split("勝")[0]), x["10日間累計"], x["台番号_num"]))
+            
+        # ⚠️ 【超重要】並び替えが終わったデータを、確実にStreamlit用のテーブルに変換します
+        df_display = pd.DataFrame(table_rows)
 
         
         # 🛠️ 【修正のポイント2】dropを使わずcolumn_configで非表示に統一（データ消失によるKeyErrorバグを防止）
