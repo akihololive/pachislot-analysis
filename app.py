@@ -3,8 +3,8 @@ import streamlit as st
 import pandas as pd
 
 st.set_page_config(page_title="パチスロ 10日間データ一括分析ツール", page_icon="🎰", layout="wide")
-st.title("🎰 パチスロ：複数店舗対応 10日間一括分析ツール（Web全自動版）")
-st.markdown("GitHub内の各店舗フォルダから最新10日分のデータを自動で取得し、一括クロス分析を行います！")
+st.title("🎰 パチスロ：出玉推移分析ツール")
+st.markdown("※出玉がついてるだけなので低設定のまぐれの可能性もあります。高設定が据えてあるというわけではありません。")
 
 # ⚙️ 【重要】ここをご自身のGitHubアカウント情報に書き換えてください！
 GITHUB_USER = "akihololive"
