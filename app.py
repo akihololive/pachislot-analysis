@@ -13,7 +13,7 @@ GITHUB_BRANCH = "main"
 
 # 💡 英語に変更したフォルダ名の対応表
 shop_map = {
-    "アイランド秋秋原店": "island",
+    "アイランド秋原店": "island",
     "エクサファースト": "exa",
     "エスパス秋葉原店": "espace"
 }
