@@ -132,15 +132,20 @@ if current_shop_key in st.session_state:
             else: star, rank_score = "🔥 低頻度", 1
         else:
             if analysis_mode == "据え置き狙い（連続プラス台）":
-                if latest_coin >= min_coin:
+                # 据え置きは前日がユーザーの指定枚数以上の場合に表示
+                if min_coin == "all" or latest_coin >= min_coin:
                     show_this_table = True
-                    if history.get(2, 0) > 0 and history.get(3, 0) > 0: star, rank_score = "🔥🔥🔥 高頻度", 3
-                    elif history.get(2, 0) > 0: star, rank_score = "🔥🔥 中頻度", 2
-                    else: star, rank_score = "🔥 低頻度", 1
+                    if history.get(2, 0) > 0 and history.get(3, 0) > 0: star, rank_score = "🔥🔥🔥 連続プラス", 3
+                    elif history.get(2, 0) > 0: star, rank_score = "🔥🔥 前日プラス", 2
+                    else: star, rank_score = "🔥 単発プラス", 1
             elif analysis_mode == "設定上げ狙い（連続凹み台）":
+                # 設定上げ狙いは、前日差枚の条件を無視して「前日がマイナス（凹み）」の台を強制的に集計します
                 if latest_coin < 0:
-                    if history.get(2, 0) < 0 and history.get(3, 0) < 0: show_this_table, star, rank_score = True, "💎💎💎 極・変更上げ", 3
-                    elif history.get(2, 0) < 0: show_this_table, star, rank_score = True, "💎💎 上げ準備", 2
+                    show_this_table = True
+                    if history.get(2, 0) < 0 and history.get(3, 0) < 0: star, rank_score = "💎💎💎 3日連続凹み", 3
+                    elif history.get(2, 0) < 0: star, rank_score = "💎💎 2日連続凹み", 2
+                    else: star, rank_score = "💎 前日のみ凹み", 1
+
 
         if show_this_table:
             total_days = plus_days + minus_days
