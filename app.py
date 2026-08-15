@@ -152,7 +152,7 @@ if current_shop_key in st.session_state:
             })
             
     if table_rows:
-        table_rows.sort(key=lambda x: (x["台番号_num"]))
+        table_rows.sort(key=lambda x: (-int(x["勝率履歴"].split("勝")[0]), -x["10日間累計"], x["台番号_num"]))
         df_display = pd.DataFrame(table_rows)
         
         # 🛠️ 【修正のポイント2】dropを使わずcolumn_configで非表示に統一（データ消失によるKeyErrorバグを防止）
