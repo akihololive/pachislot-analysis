@@ -4,7 +4,7 @@ import pandas as pd
 
 st.set_page_config(page_title="パチスロ 10日間データ一括分析ツール", page_icon="🎰", layout="wide")
 st.title("🎰 パチスロ：出玉推移分析ツール")
-st.markdown("※出玉がついてるだけなので低設定のまぐれの可能性もあります。高設定が据えてあるというわけではありません。")
+st.markdown("※出玉がついてる台をピックしているだけなので低設定のまぐれ吹きの可能性もあります。高設定が据えてあるというわけではありません。あしからず。")
 
 # ⚙️ 【重要】ここをご自身のGitHubアカウント情報に書き換えてください！
 GITHUB_USER = "akihololive"
