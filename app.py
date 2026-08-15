@@ -13,10 +13,9 @@ GITHUB_BRANCH = "main"
 
 # 💡 英語に変更したフォルダ名の対応表
 shop_map = {
+    "ニート配信店": "exa",
     "アイランド秋葉原店": "island",
-    "エクサファースト": "exa",
     "エスパス秋葉原店": "espace",
-    "ニート配信店": "neat"
 }
 
 selected_shop = st.selectbox("🏢 分析する店舗を選択してください", list(shop_map.keys()))
