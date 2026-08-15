@@ -146,7 +146,7 @@ if current_shop_key in st.session_state:
             total_days = plus_days + minus_days
             avg_coin = int(total_coin / total_days) if total_days > 0 else 0
             table_rows.append({
-                "rank_score": rank_score, "台番号_num": table_num, "台番号": f"{table_num}番", "機種名": info["name"],
+                "rank_score": rank_score, "台番号_num": table_num, "台番号": f"📉{table_num}番", "機種名": info["name"],
                 "ステータス": star, "前日差枚": latest_coin, "10日間累計": total_coin, 
                 "勝率履歴": f"{plus_days}勝/{minus_days}敗", "10日平均差枚": avg_coin, "10日間のデータ推移(新しい順)": history_flow_short
             })
