@@ -3,8 +3,8 @@ import streamlit as st
 import pandas as pd
 
 st.set_page_config(page_title="パチスロ 10日間データ一括分析ツール", page_icon="🎰", layout="wide")
-st.title("🎰 パチスロ：複数店舗対応 10日間一括分析ツール（Web全自動版）")
-st.markdown("GitHub内の各店舗フォルダから最新10日分のデータを自動で取得し、一括クロス分析を行います！")
+st.title("🎰 パチスロ：差枚数確認ツール")
+st.markdown("直近の差枚数確認用、高設定が据えてるわけじゃないよ")
 
 # ⚙️ 設定
 GITHUB_USER = "akihololive"
