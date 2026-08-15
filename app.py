@@ -38,7 +38,7 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
             folder_name = shop_map[selected_shop]
             
             headers = {"User-Agent": "Streamlit-App"}
-            api_url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/data/{folder_name}"
+            api_url = f"https://raw.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/data/{folder_name}"
             
             api_res = requests.get(api_url, headers=headers)
             if api_res.status_code != 200:
@@ -59,7 +59,7 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
             
             for fname in target_files:
                 day_num = day_mapping[fname]
-                file_raw_url = f"https://githubusercontent.com{GITHUB_USER}/{GITHUB_REPO}/{GITHUB_BRANCH}/data/{folder_name}/{fname}"
+                file_raw_url = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/{GITHUB_BRANCH}/data/{folder_name}/{fname}"
                 
                 file_res = requests.get(file_raw_url)
                 if file_res.status_code == 200:
