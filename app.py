@@ -50,7 +50,7 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
                 day_num = day_mapping[fname]
                 
                 # 🛠️ 【修正のポイント1】GitHubからRawデータを直撃で取得する正しいURL構造に修正
-                file_raw_url = f"https://githubusercontent.com{GITHUB_USER}/{GITHUB_REPO}/{GITHUB_BRANCH}/data/{folder_name}/{fname}"
+                file_raw_url = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/{GITHUB_BRANCH}/data/{folder_name}/{fname}"
                 
                 file_res = requests.get(file_raw_url)
                 if file_res.status_code == 200:
