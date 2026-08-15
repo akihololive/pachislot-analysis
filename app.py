@@ -6,9 +6,14 @@ st.set_page_config(page_title="パチスロ 10日間データ一括分析ツー�
 st.title("🎰 パチスロ：複数店舗対応 10日間一括分析ツール（Web全自動版）")
 st.markdown("GitHub内の各店舗フォルダから最新10日分のデータを自動で取得し、一括クロス分析を行います！")
 
-# 💡 あなたが英語に変更してくれた、完璧に壊れないフォルダ名の対応表です！
+# ⚙️ 【重要】ここをご自身のGitHubアカウント情報に書き換えてください！
+GITHUB_USER = "akihololive"
+GITHUB_REPO = "pachislot-analysis"
+GITHUB_BRANCH = "main"
+
+# 💡 英語に変更したフォルダ名の対応表
 shop_map = {
-    "アイランド秋葉原店": "island",
+    "アイランド秋秋原店": "island",
     "エクサファースト": "exa",
     "エスパス秋葉原店": "espace"
 }
@@ -30,7 +35,7 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
         try:
             folder_name = shop_map[selected_shop]
             
-            # 💡 あなたのGitHubに現実に存在する「12日」までの全10日分の日付をダイレクトに指定
+            # 10日分の日付を指定
             target_files = [
                 "20260812.txt", "20260811.txt", "20260810.txt", "20260809.txt",
                 "20260808.txt", "20260807.txt", "20260806.txt", "20260805.txt",
@@ -44,13 +49,14 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
             for fname in target_files:
                 day_num = day_mapping[fname]
                 
-                # 🛠️ 【根本解決】全角の店舗名を一切使わず、英数字フォルダ（islandなど）を真っ直ぐ読みに行きます！
-                file_raw_url = f"https://githubusercontent.com{folder_name}/{fname}"
+                # 🛠️ 【修正のポイント1】GitHubからRawデータを直撃で取得する正しいURL構造に修正
+                file_raw_url = f"https://githubusercontent.com{GITHUB_USER}/{GITHUB_REPO}/{GITHUB_BRANCH}/data/{folder_name}/{fname}"
                 
                 file_res = requests.get(file_raw_url)
                 if file_res.status_code == 200:
                     success_count += 1
-                    lines = file_res.text.split("\n")
+                    # 文字化け対策のため、明示的に utf-8 でデコード
+                    lines = file_res.content.decode('utf-8').split("\n")
                     for line in lines:
                         line = line.strip()
                         if not line or "機種" in line or "台番" in line: continue
@@ -68,7 +74,7 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
                             except ValueError: continue
 
             if success_count == 0:
-                st.error(f"❌ {selected_shop}（フォルダ名: {folder_name}）のデータファイルを1つも読み込めませんでした。「data/{folder_name}」フォルダの中にファイルが入っているかご確認ください。")
+                st.error(f"❌ {selected_shop}（フォルダ名: {folder_name}）のデータファイルを1つも読み込めませんでした。\n\n想定URL: {file_raw_url}\n\n上記URLが正しいか、GitHubリポジトリが「Public（公開）」になっているかご確認ください。")
                 st.stop()
             
             st.session_state[current_shop_key] = all_data
@@ -136,24 +142,30 @@ if current_shop_key in st.session_state:
     if table_rows:
         table_rows.sort(key=lambda x: (x["台番号_num"]))
         df_display = pd.DataFrame(table_rows)
-        df_clean = df_display.drop(columns=["rank_score"])
         
+        # 🛠️ 【修正のポイント2】dropを使わずcolumn_configで非表示に統一（データ消失によるKeyErrorバグを防止）
         selected_rows = st.dataframe(
-            df_clean, use_container_width=True, height=400, on_select="rerun", selection_mode="single-row",
+            df_display, use_container_width=True, height=400, on_select="rerun", selection_mode="single-row",
             column_config={
+                "rank_score": None,
+                "台番号_num": None,
                 "前日差枚": st.column_config.NumberColumn(format="%+,d枚", alignment="left"), 
                 "10日間累計": st.column_config.NumberColumn(format="%+,d枚", alignment="left"),
                 "10日平均差枚": st.column_config.NumberColumn(format="%+,d枚", alignment="left"),
             }
         )
         
-        try:
-            row_idx = selected_rows["selection"]["rows"] if selected_rows and "rows" in selected_rows["selection"] and selected_rows["selection"]["rows"] else 0
-            target_table_num = int(df_clean.iloc[row_idx]["台番号_num"])
-            target_machine_name = str(df_clean.iloc[row_idx]["機種名"])
-        except Exception:
-            target_table_num = int(df_clean.iloc["台番号_num"])
-            target_machine_name = str(df_clean.iloc["機種名"])
+        # 🛠️ 【修正のポイント3】台選択の処理をデータがズレない安全な記述に変更
+        target_table_num = None
+        target_machine_name = ""
+        
+        if selected_rows and "rows" in selected_rows["selection"] and selected_rows["selection"]["rows"]:
+            row_idx = selected_rows["selection"]["rows"][0]
+            target_table_num = int(df_display.iloc[row_idx]["台番号_num"])
+            target_machine_name = str(df_display.iloc[row_idx]["機種名"])
+        else:
+            target_table_num = int(df_display.iloc[0]["台番号_num"])
+            target_machine_name = str(df_display.iloc[0]["機種名"])
         
         if target_table_num:
             st.write("---")
