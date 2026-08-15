@@ -3,19 +3,20 @@ import streamlit as st
 import pandas as pd
 
 st.set_page_config(page_title="パチスロ 10日間データ一括分析ツール", page_icon="🎰", layout="wide")
-st.title("🎰 パチスロ：出玉推移分析ツール")
-st.markdown("※出玉がついてる台をピックしているだけです。高設定が据えてあるというわけではありません。台選びにご活用ください。")
+st.title("🎰 パチスロ：複数店舗対応 10日間一括分析ツール（Web全自動版）")
+st.markdown("GitHub内の各店舗フォルダから最新10日分のデータを自動で取得し、一括クロス分析を行います！")
 
-# ⚙️ 【重要】ここをご自身のGitHubアカウント情報に書き換えてください！
+# ⚙️ 設定
 GITHUB_USER = "akihololive"
 GITHUB_REPO = "pachislot-analysis"
 GITHUB_BRANCH = "main"
 
 # 💡 英語に変更したフォルダ名の対応表
 shop_map = {
-    "ニート配信店": "exa",
-    "アイランド秋原店": "island",
-    "エスパス秋葉原店": "espace"
+    "アイランド秋葉原店": "island",
+    "エクサファースト": "exa",
+    "エスパス秋葉原店": "espace",
+    "ニート配信店": "neat"
 }
 
 selected_shop = st.selectbox("🏢 分析する店舗を選択してください", list(shop_map.keys()))
@@ -23,6 +24,7 @@ selected_shop = st.selectbox("🏢 分析する店舗を選択してください
 st.write("---")
 col1, col2 = st.columns(2)
 with col1:
+    # 💡 初期状態（index=0）を「すべての台」に設定
     min_coin = st.selectbox("💰 最低差枚数（最新日ベース）", ["all", -1000, -500, 0, 500, 1000, 2000, 3000, 5000], index=0, format_func=lambda x: "✨ すべての台（制限なし）" if x == "all" else ("前日プラス台" if x == 0 else f"{x:+,}枚以上"))
 with col2:
     analysis_mode = st.radio("🔍 分析フォーカス", ["据え置き狙い（連続プラス台）", "設定上げ狙い（連続凹み台）"], horizontal=True)
@@ -35,16 +37,14 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
         try:
             folder_name = shop_map[selected_shop]
             
-            # 🔄 GitHubのセキュリティルールに対応したヘッダーを追加
             headers = {"User-Agent": "Streamlit-App"}
-            api_url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/data/{folder_name}"
+            api_url = f"https://github.com{GITHUB_USER}/{GITHUB_REPO}/contents/data/{folder_name}"
             
             api_res = requests.get(api_url, headers=headers)
             if api_res.status_code != 200:
                 st.error(f"❌ GitHubからファイル一覧を取得できませんでした。(Status: {api_res.status_code})")
                 st.stop()
                 
-            # フォルダ内の.txtファイルを見つけて、新しい日付順に並び替え
             api_data = api_res.json()
             all_files = sorted([f["name"] for f in api_data if f["name"].endswith(".txt")], reverse=True)
             target_files = all_files[:10]
@@ -59,15 +59,11 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
             
             for fname in target_files:
                 day_num = day_mapping[fname]
-
-                
-                # 🛠️ 【修正のポイント1】GitHubからRawデータを直撃で取得する正しいURL構造に修正
-                file_raw_url = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/{GITHUB_BRANCH}/data/{folder_name}/{fname}"
+                file_raw_url = f"https://githubusercontent.com{GITHUB_USER}/{GITHUB_REPO}/{GITHUB_BRANCH}/data/{folder_name}/{fname}"
                 
                 file_res = requests.get(file_raw_url)
                 if file_res.status_code == 200:
                     success_count += 1
-                    # 文字化け対策のため、明示的に utf-8 でデコード
                     lines = file_res.content.decode('utf-8').split("\n")
                     for line in lines:
                         line = line.strip()
@@ -86,7 +82,7 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
                             except ValueError: continue
 
             if success_count == 0:
-                st.error(f"❌ {selected_shop}（フォルダ名: {folder_name}）のデータファイルを1つも読み込めませんでした。\n\n想定URL: {file_raw_url}\n\n上記URLが正しいか、GitHubリポジトリが「Public（公開）」になっているかご確認ください。")
+                st.error(f"❌ データファイルを1つも読み込めませんでした。")
                 st.stop()
             
             st.session_state[current_shop_key] = all_data
@@ -127,40 +123,37 @@ if current_shop_key in st.session_state:
         show_this_table, star, rank_score = False, "", 0
         if min_coin == "all":
             show_this_table = True
-            if history.get(2, 0) > 0 and history.get(3, 0) > 0: star, rank_score = "🔥🔥🔥 高頻度", 3
-            elif history.get(2, 0) > 0: star, rank_score = "🔥🔥 中頻度", 2
-            else: star, rank_score = "🔥 低頻度", 1
+            if history.get(2, 0) > 0 and history.get(3, 0) > 0: star, rank_score = "🔥🔥🔥 連続プラス", 3
+            elif history.get(2, 0) > 0: star, rank_score = "🔥🔥 前日プラス", 2
+            else: star, rank_score = "🔥 単発プラス", 1
         else:
             if analysis_mode == "据え置き狙い（連続プラス台）":
-                # 据え置きは前日がユーザーの指定枚数以上の場合に表示
-                if min_coin == "all" or latest_coin >= min_coin:
+                if latest_coin >= min_coin:
                     show_this_table = True
                     if history.get(2, 0) > 0 and history.get(3, 0) > 0: star, rank_score = "🔥🔥🔥 連続プラス", 3
                     elif history.get(2, 0) > 0: star, rank_score = "🔥🔥 前日プラス", 2
                     else: star, rank_score = "🔥 単発プラス", 1
             elif analysis_mode == "設定上げ狙い（連続凹み台）":
-                # 設定上げ狙いは、前日差枚の条件を無視して「前日がマイナス（凹み）」の台を強制的に集計します
                 if latest_coin < 0:
                     show_this_table = True
                     if history.get(2, 0) < 0 and history.get(3, 0) < 0: star, rank_score = "💎💎💎 3日連続凹み", 3
                     elif history.get(2, 0) < 0: star, rank_score = "💎💎 2日連続凹み", 2
                     else: star, rank_score = "💎 前日のみ凹み", 1
 
-
         if show_this_table:
             total_days = plus_days + minus_days
             avg_coin = int(total_coin / total_days) if total_days > 0 else 0
             table_rows.append({
-                "rank_score": rank_score, "台番号_num": table_num, "台番号": f"📉{table_num}番", "機種名": info["name"],
+                "rank_score": rank_score, "台番号_num": table_num, "台番号": f"📈 {table_num}番", "機種名": info["name"],
                 "ステータス": star, "前日差枚": latest_coin, "10日間累計": total_coin, 
                 "勝率履歴": f"{plus_days}勝/{minus_days}敗", "10日平均差枚": avg_coin, "10日間のデータ推移(新しい順)": history_flow_short
             })
             
-        # 💡 元の安全な並び替え（台番号順）に戻します
+    if table_rows:
+        # 💡 【復活】一番安定していた「台番号順」の並び替えにリセットします
         table_rows.sort(key=lambda x: (x["台番号_num"]))
         df_display = pd.DataFrame(table_rows)
         
-        # 🛠️ 【修正のポイント2】dropを使わずcolumn_configで非表示に統一（データ消失によるKeyErrorバグを防止）
         selected_rows = st.dataframe(
             df_display, use_container_width=True, height=400, on_select="rerun", selection_mode="single-row",
             column_config={
@@ -172,17 +165,12 @@ if current_shop_key in st.session_state:
             }
         )
         
-        # 🛠️ 【修正のポイント3】台選択の処理をデータがズレない安全な記述に変更
-        target_table_num = None
-        target_machine_name = ""
-        
-        # 💡 クリック操作をしても絶対にエラーが起きない安全な処理
+        # 💡 【復活】クリックしても絶対にエラーが出ない、かつ最初から一番上が選ばれる安全な処理
         if selected_rows and "rows" in selected_rows["selection"] and selected_rows["selection"]["rows"]:
-            # 選択された行のリストから、最初の1個を取り出す処理を追加します
             row_idx = selected_rows["selection"]["rows"][0]
         else:
-            row_idx = 0 # 誰も選んでいない時は、自動的に1番上（0番目）にする
-            
+            row_idx = 0
+        
         target_table_num = int(df_display.iloc[row_idx]["台番号_num"])
         target_machine_name = str(df_display.iloc[row_idx]["機種名"])
         
