@@ -157,7 +157,7 @@ if current_shop_key in st.session_state:
         
         # 🛠️ 【修正のポイント2】dropを使わずcolumn_configで非表示に統一（データ消失によるKeyErrorバグを防止）
         selected_rows = st.dataframe(
-            df_display, use_container_width=True, height=400, on_select="rerun", selection_mode="single-row", selection=[0],
+            df_display, use_container_width=True, height=400, on_select="rerun", selection_mode="single-row"
             column_config={
                 "rank_score": None,
                 "台番号_num": None,
@@ -171,13 +171,15 @@ if current_shop_key in st.session_state:
         target_table_num = None
         target_machine_name = ""
         
+        # 💡 最初から1番上の台（0番目の行）をデフォルト選択状態にする安全な処理
         if selected_rows and "rows" in selected_rows["selection"] and selected_rows["selection"]["rows"]:
-            row_idx = selected_rows["selection"]["rows"][0]
-            target_table_num = int(df_display.iloc[row_idx]["台番号_num"])
-            target_machine_name = str(df_display.iloc[row_idx]["機種名"])
+            row_idx = selected_rows["selection"]["rows"]
         else:
-            target_table_num = int(df_display.iloc[0]["台番号_num"])
-            target_machine_name = str(df_display.iloc[0]["機種名"])
+            row_idx = 0 # 👈 誰も選んでいない時は、自動的に1番上（0番目）にする
+            
+        target_table_num = int(df_display.iloc[row_idx]["台番号_num"])
+        target_machine_name = str(df_display.iloc[row_idx]["機種名"])
+
         
         if target_table_num:
             st.write("---")
