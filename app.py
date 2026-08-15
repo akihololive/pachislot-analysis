@@ -171,15 +171,15 @@ if current_shop_key in st.session_state:
         target_table_num = None
         target_machine_name = ""
         
-        # 💡 最初から1番上の台（0番目の行）をデフォルト選択状態にする安全な処理
+        # 💡 クリック操作をしても絶対にエラーが起きない安全な処理
         if selected_rows and "rows" in selected_rows["selection"] and selected_rows["selection"]["rows"]:
-            row_idx = selected_rows["selection"]["rows"]
+            # 選択された行のリストから、最初の1個を取り出す処理を追加します
+            row_idx = selected_rows["selection"]["rows"][0]
         else:
-            row_idx = 0 # 👈 誰も選んでいない時は、自動的に1番上（0番目）にする
+            row_idx = 0 # 誰も選んでいない時は、自動的に1番上（0番目）にする
             
         target_table_num = int(df_display.iloc[row_idx]["台番号_num"])
         target_machine_name = str(df_display.iloc[row_idx]["機種名"])
-
         
         if target_table_num:
             st.write("---")
