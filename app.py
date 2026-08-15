@@ -2,9 +2,9 @@ import re, requests
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="パチスロ 10日間データ一括分析ツール", page_icon="🎰", layout="wide")
-st.title("🎰 パチスロ：差枚数確認ツール")
-st.markdown("直近の差枚数確認用、高設定が据えてるわけじゃないよ")
+st.set_page_config(page_title="パチスロ 据え置きチェッカー", page_icon="🎰", layout="wide")
+st.title("🎰 パチスロ：据え置きチェッカー")
+st.markdown("直近の差枚数確認用、高設定が据えてあるわけじゃないよ！🐰")
 
 # ⚙️ 設定
 GITHUB_USER = "akihololive"
