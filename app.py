@@ -16,6 +16,8 @@ shop_map = {
     "ニート配信店": "exa",
     "アイランド秋葉原店": "island",
     "エスパス秋葉原店": "espace",
+    "マルハン池袋SB": "maruhan_ikebukuro_sb",
+    "マルハン東宝新宿": "maruhan_shinjuku"
 }
 
 selected_shop = st.selectbox("🏢 分析する店舗を選択してください", list(shop_map.keys()))
