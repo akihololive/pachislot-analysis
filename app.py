@@ -149,9 +149,14 @@ if current_shop_key in st.session_state:
             })
             
     if table_rows:
-        # 💡 【復活】一番安定していた「台番号順」の並び替えにリセットします
-        table_rows.sort(key=lambda x: (x["台番号_num"]))
+        # 💡 モードに合わせて自動並び替え（据え置き＝勝率降順 / 設定上げ＝勝率昇順）
+        if analysis_mode == "据え置き狙い（連続プラス台）":
+            table_rows.sort(key=lambda x: (-int(x["勝率履歴"].split("勝")[0]), -x["10日間累計"], x["台番号_num"]))
+        else:
+            table_rows.sort(key=lambda x: (int(x["勝率履歴"].split("勝")[0]), x["10日間累計"], x["台番号_num"]))
+
         df_display = pd.DataFrame(table_rows)
+
         
         selected_rows = st.dataframe(
             df_display, use_container_width=True, height=400, on_select="rerun", selection_mode="single-row",
