@@ -35,12 +35,12 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
         try:
             folder_name = shop_map[selected_shop]
             
-            # 10日分の日付を指定
-            target_files = [
-                "20260812.txt", "20260811.txt", "20260810.txt", "20260809.txt",
-                "20260808.txt", "20260807.txt", "20260806.txt", "20260805.txt",
-                "20260804.txt", "20260803.txt"
-            ]
+            # 🔄 GitHubのフォルダ内を検索して、最新10日分のファイルを自動取得
+            api_url = f"https://github.com{GITHUB_USER}/{GITHUB_REPO}/contents/data/{folder_name}"
+            api_res = requests.get(api_url).json()
+            all_files = sorted([f["name"] for f in api_res if f["name"].endswith(".txt")], reverse=True)
+            target_files = all_files[:10]
+
             
             day_mapping = {fname: (index + 1) for index, fname in enumerate(target_files)}
             all_data, unique_machines = {}, set()
