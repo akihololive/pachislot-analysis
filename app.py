@@ -157,7 +157,7 @@ if current_shop_key in st.session_state:
         
         # 🛠️ 【修正のポイント2】dropを使わずcolumn_configで非表示に統一（データ消失によるKeyErrorバグを防止）
         selected_rows = st.dataframe(
-            df_display, use_container_width=True, height=400, on_select="rerun", selection_mode="single-row"
+            df_display, use_container_width=True, height=400, on_select="rerun", selection_mode="single-row",
             column_config={
                 "rank_score": None,
                 "台番号_num": None,
