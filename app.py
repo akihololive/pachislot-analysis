@@ -35,12 +35,23 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
         try:
             folder_name = shop_map[selected_shop]
             
-            # 🔄 GitHubのフォルダ内を検索して、最新10日分のファイルを自動取得
-            api_url = f"https://github.com/{GITHUB_USER}/{GITHUB_REPO}/contents/data/{folder_name}"
-            api_res = requests.get(api_url).json()
-            all_files = sorted([f["name"] for f in api_res if f["name"].endswith(".txt")], reverse=True)
+            # 🔄 GitHubのセキュリティルールに対応したヘッダーを追加
+            headers = {"User-Agent": "Streamlit-App"}
+            api_url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/data/{folder_name}"
+            
+            api_res = requests.get(api_url, headers=headers)
+            if api_res.status_code != 200:
+                st.error(f"❌ GitHubからファイル一覧を取得できませんでした。(Status: {api_res.status_code})")
+                st.stop()
+                
+            # フォルダ内の.txtファイルを見つけて、新しい日付順に並び替え
+            api_data = api_res.json()
+            all_files = sorted([f["name"] for f in api_data if f["name"].endswith(".txt")], reverse=True)
             target_files = all_files[:10]
-
+            
+            if not target_files:
+                st.error(f"❌ {selected_shop}のフォルダ内に .txt ファイルが見つかりませんでした。")
+                st.stop()
             
             day_mapping = {fname: (index + 1) for index, fname in enumerate(target_files)}
             all_data, unique_machines = {}, set()
@@ -48,6 +59,7 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
             
             for fname in target_files:
                 day_num = day_mapping[fname]
+
                 
                 # 🛠️ 【修正のポイント1】GitHubからRawデータを直撃で取得する正しいURL構造に修正
                 file_raw_url = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/{GITHUB_BRANCH}/data/{folder_name}/{fname}"
