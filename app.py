@@ -4,7 +4,7 @@ import pandas as pd
 
 st.set_page_config(page_title="パチスロ 据え置きチェッカー", page_icon="🎰", layout="wide")
 st.title("🎰 パチスロ：据え置きチェッカー")
-st.markdown("直近の差枚数確認用、高設定が据えてあるわけじゃないよ！🐰")
+st.markdown("直近の差枚数確認用、高設定が据えてあるわけじゃないよ！※8月15日まで反映🐰")
 
 # ⚙️ 設定
 GITHUB_USER = "akihololive"
