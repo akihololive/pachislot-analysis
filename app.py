@@ -2,8 +2,8 @@ import re, requests
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="パチスロ 据え置きチェッカー", page_icon="🎰", layout="wide")
-st.title("🎰 パチスロ：据え置きチェッカー")
+st.set_page_config(page_title="パチスロ 差枚チェッカー", page_icon="🎰", layout="wide")
+st.title("🎰 パチスロ：差枚チェッカー")
 st.markdown('直近の差枚数確認用、高設定が据えてあるわけじゃないよ！<span style="color:red;">※8月15日まで反映</span>🐰', unsafe_allow_html=True)
 
 # ⚙️ 設定
@@ -13,11 +13,11 @@ GITHUB_BRANCH = "main"
 
 # 💡 英語に変更したフォルダ名の対応表
 shop_map = {
-    "ニート配信店": "exa",
     "アイランド秋葉原店": "island",
     "エスパス秋葉原店": "espace",
     "マルハン池袋SB": "maruhan_ikebukuro_sb",
-    "マルハン東宝新宿": "maruhan_shinjuku"
+    "マルハン東宝新宿": "maruhan_shinjuku",
+    "エクサファースト": "exa",
 }
 
 selected_shop = st.selectbox("🏢 分析する店舗を選択してください", list(shop_map.keys()))
