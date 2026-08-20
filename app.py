@@ -262,7 +262,7 @@ if graph_data:
     for row_item in graph_data:
         summary_cols.append(f"{row_item.get('index_num')}日前")
         v = row_item.get("value_coin")
-        summary_vals.append(f"{v:+,}" if v != 0 else "0")
+        summary_vals.append(f"[{v:+,}]" if v != 0 else "0")
     
     df_summary = pd.DataFrame([summary_vals], columns=summary_cols, index=["当日の差枚数"])
     st.dataframe(df_summary, use_container_width=True)
