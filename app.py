@@ -1,6 +1,9 @@
-import re, requests
+import re
+import requests
 import streamlit as st
 import pandas as pd
+import numpy as np  # 👈 ここにこの行が新しく入っていれば大正解です！
+import plotly.graph_objects as go
 
 st.set_page_config(page_title="パチスロ 差枚チェッカー", page_icon="🎰", layout="wide")
 st.title("🎰 パチスロ：差枚チェッカー")
