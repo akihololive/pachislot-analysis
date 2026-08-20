@@ -177,8 +177,9 @@ if current_shop_key in st.session_state:
         else:
             row_idx = 0
         
-# ⭕ 180行目と181行目をこの正しい文字に直します！（インデントの位置はそのままでOK！）
-        target_table_num = int(df_display.iloc[row_idx]["台番号"].replace("番台", ""))
+        # 💡 文字列の中から数字（台番号）だけを100%安全にガチで抽出する最強の処理！
+        target_table_num = int(re.sub(r"\D", "", str(df_display.iloc[row_idx]["台番号"])))
+
         target_machine_name = str(df_display.iloc[row_idx]["機種名"])
         
         if target_table_num:
