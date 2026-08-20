@@ -232,7 +232,7 @@ if current_shop_key in st.session_state:
         # ホール液晶風のダークモードレイアウト調整
         fig.update_layout(
             margin=dict(l=20, r=20, t=10, b=10),
-            height=300,
+            height=600,
             showlegend=False,
             template="plotly_dark",
             paper_bgcolor='rgba(0,0,0,0)', 
