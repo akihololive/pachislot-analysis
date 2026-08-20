@@ -205,7 +205,7 @@ if table_rows:
     
     df_display = df_display[cols_order]
 
-        selected_rows = st.dataframe(
+    selected_rows = st.dataframe(
             df_display, use_container_width=True, height=400, on_select="rerun", selection_mode="single-row",
             column_config={
                 "rank_score": None,
