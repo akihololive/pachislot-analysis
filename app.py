@@ -193,7 +193,66 @@ if current_shop_key in st.session_state:
             if graph_data:
                 df_chart = pd.DataFrame(graph_data)
                 df_chart_fixed = df_chart.set_index("index_num").reindex(range(1, 11)).dropna()
-                st.bar_chart(df_chart_fixed["当日の差枚数"], use_container_width=True)
+                
+                # 📈 【累積スランプグラフ化】過去のデータを安全に積み上げて折れ線を作ります
+                cum_sum_data = np.cumsum(df_chart_fixed["当日の差枚数"])
+                
+                # 💡 AIによる文字化けバグを完全に防衛するため、言葉だけで配列（リスト）を組み立て！
+                y_values = list()
+                y_values.append(0)
+                for val in cum_sum_data:
+                    y_values.append(int(val))
+                    
+                x_labels = list()
+                x_labels.append("スタート")
+                for idx in df_chart_fixed.index:
+                    x_labels.append(f"{idx}日前")
+                
+                fig = go.Figure()
+                
+                # 0基準線（白点線）
+                zero_y = list()
+                for _ in range(len(x_labels)):
+                    zero_y.append(0)
+                    
+                fig.add_trace(go.Scatter(
+                    x=x_labels, 
+                    y=zero_y, 
+                    mode="lines", 
+                    line=dict(color="rgba(255, 255, 255, 0.3)", width=1, dash="dash"),
+                    hoverinfo="skip"
+                ))
+                
+                # 鮮やかなオレンジ色の折れ線（縦幅2倍のド迫力データロボ仕様！）
+                fig.add_trace(go.Scatter(
+                    x=x_labels,
+                    y=y_values,
+                    mode="lines+markers", 
+                    line=dict(color="#ff9900", width=3), 
+                    marker=dict(color="#ff9900", size=6),
+                    hovertemplate="<b>%{x}時点の累計差枚</b><br>差枚数: %{y:+,}枚<extra></extra>"
+                ))
+                
+                fig.update_layout(
+                    margin=dict(l=20, r=20, t=10, b=10),
+                    height=600,
+                    showlegend=False,
+                    template="plotly_dark",
+                    paper_bgcolor="rgba(0,0,0,0)", 
+                    plot_bgcolor="rgba(20,20,20,0.8)",
+                    yaxis=dict(
+                        zeroline=True,
+                        zerolinewidth=1.5,
+                        zerolinecolor="white",
+                        tickformat="+,,d",
+                        gridcolor="rgba(255, 255, 255, 0.1)"
+                    ),
+                    xaxis=dict(
+                        gridcolor="rgba(255, 255, 255, 0.05)"
+                    )
+                )
+                
+                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
                 
                 df_table_formatted = df_chart_fixed.copy()
                 df_table_formatted["当日の差枚数"] = df_table_formatted["当日の差枚数"].map(lambda x: f"{x:+,}" if x != 0 else "0")
