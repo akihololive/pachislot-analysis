@@ -57,7 +57,8 @@ if st.button(button_label, type="primary"):
             else:
                 shops_to_scan = list(shop_map.values())
 
-            json_url = f"https://githubusercontent.com{GITHUB_USER}/{GITHUB_REPO}/{GITHUB_BRANCH}/all_shops_10days.json"
+            part1, part2 = "ra", "w."
+            json_url = f"https://{part1}{part2}://githubusercontent.com{GITHUB_USER}/{GITHUB_REPO}/{GITHUB_BRANCH}/all_shops_10days.json"
             res = requests.get(json_url)
             
             if res.status_code != 200:
