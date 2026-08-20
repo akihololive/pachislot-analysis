@@ -100,12 +100,12 @@ if current_shop_key in st.session_state and st.session_state.get(current_shop_ke
     target_files = st.session_state.get(f"web_files_{current_shop_key}")
     day_mapping = st.session_state.get(f"web_mapping_{current_shop_key}")
     
-    selected_machine = st.selectbox("🎯 機種名でピンポイント絞り込み", ["✨ すべての機種"] + unique_machines)
+    selected_machine = st.selectbox("🎯 機種名でピンポイント絞り込み", list(["ALL"]) + unique_machines, format_func=lambda x: "✨ すべての機種" if x == "ALL" else x)
     st.write(f"## 🏆 分析結果（直近10日間データ）")
     
     table_rows = []
     for unique_key, info in all_data.items():
-        if selected_machine != "✨ すべての機種" and info.get("name") != selected_machine: continue
+        if selected_machine != "ALL" and info.get("name") != selected_machine: continue
         history = info.get("history")
 
     history_flow_short = "[" + ", ".join(history_k_list) + "]"
