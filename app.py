@@ -224,10 +224,13 @@ if current_shop_key in st.session_state:
                 df_chart = pd.DataFrame(graph_data)
                 df_chart_fixed = df_chart.set_index("index_num").reindex(range(1, 11)).dropna()
                 
-                # 📈 【累積スランプグラフ化】過去のデータを安全に積み上げて折れ線を作ります
-                cum_sum_data = np.cumsum(df_chart_fixed["当日の差枚数"])
+                # 💡 グラフの時系列を「古い順（10日前 ➡️ 1日前）」に180度ひっくり返します！
+                df_chronological = df_chart_fixed.sort_index(ascending=False)
                 
-                # 💡 AIによる文字化けバグを完全に防衛するため、言葉だけで配列（リスト）を組み立て！
+                # 📈 【累積スランプグラフ化】過去のデータから順番に安全に積み上げます
+                cum_sum_data = np.cumsum(df_chronological["当日の差枚数"])
+                
+                # 💡 文字化け対策の安全な配列組み立て
                 y_values = list()
                 y_values.append(0)
                 for val in cum_sum_data:
@@ -235,7 +238,7 @@ if current_shop_key in st.session_state:
                     
                 x_labels = list()
                 x_labels.append("スタート")
-                for idx in df_chart_fixed.index:
+                for idx in df_chronological.index:
                     x_labels.append(f"{idx}日前")
                 
                 fig = go.Figure()
@@ -253,7 +256,7 @@ if current_shop_key in st.session_state:
                     hoverinfo="skip"
                 ))
                 
-                # 鮮やかなオレンジ色の折れ線（縦幅2倍のド迫力データロボ仕様！）
+                # 鮮やかなオレンジ色の折れ線（過去から未来へ進むデータロボ仕様！）
                 fig.add_trace(go.Scatter(
                     x=x_labels,
                     y=y_values,
@@ -274,7 +277,7 @@ if current_shop_key in st.session_state:
                         zeroline=True,
                         zerolinewidth=1.5,
                         zerolinecolor="white",
-                        tickformat="+,,d",
+                        tickformat="+,d",
                         gridcolor="rgba(255, 255, 255, 0.1)"
                     ),
                     xaxis=dict(
@@ -284,11 +287,13 @@ if current_shop_key in st.session_state:
                 
                 st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
                 
-                df_table_formatted = df_chart_fixed.copy()
+                # 一番下の詳細データ表もグラフの左から右（古い順）の流れと完全に一致させます！
+                df_table_formatted = df_chronological.copy()
                 df_table_formatted["当日の差枚数"] = df_table_formatted["当日の差枚数"].map(lambda x: f"{x:+,}" if x != 0 else "0")
                 df_summary = df_table_formatted.T
                 df_summary.columns = [f"{col}日前" for col in df_summary.columns]
                 st.dataframe(df_summary, use_container_width=True)
+
     else:
         st.info("😭 条件に合う台は見つかりませんでした。")
 else:
