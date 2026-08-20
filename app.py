@@ -179,11 +179,13 @@ if current_shop_key in st.session_state:
             })
             
     if table_rows:
-        # 💡 モードに合わせて自動並び替え（据え置き＝勝率降順 / 設定上げ＝勝率昇順）
-        if analysis_mode == "据え置き狙い（連続プラス台）":
-            table_rows.sort(key=lambda x: (-int(x["勝率履歴"].split("勝")[0]), -x["10日間累計"], x["台番号_num"]))
+        # 💡 【完全修正】連続日数（rank_score）が長いお宝台を最上部に自動ソート！
+        if analysis_mode == "据え置き狙い（連続プラス台）" or min_coin == "all":
+            # 据え置き時は連続プラス日数が長い順（さらに同数の場合は累計枚数が多い順）
+            table_rows.sort(key=lambda x: (-x["rank_score"], -x["10日間累計"], x["台番号_num"]))
         else:
-            table_rows.sort(key=lambda x: (int(x["勝率履歴"].split("勝")[0]), x["10日間累計"], x["台番号_num"]))
+            # 設定上げ時は連続凹み日数が長い順（さらに同数の場合はマイナス累計が大きい順）
+            table_rows.sort(key=lambda x: (-x["rank_score"], x["10日間累計"], x["台番号_num"]))
 
         df_display = pd.DataFrame(table_rows)
 
