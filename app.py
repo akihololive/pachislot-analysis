@@ -190,16 +190,32 @@ if current_shop_key in st.session_state:
                 day_num = day_mapping[fname]
                 if day_num in target_history: graph_data.append({"index_num": day_num, "当日の差枚数": target_history[day_num]})
                 
-            if graph_data:
-                df_chart = pd.DataFrame(graph_data)
-                df_chart_fixed = df_chart.set_index("index_num").reindex(range(1, 11)).dropna()
-                st.bar_chart(df_chart_fixed["当日の差枚数"], use_container_width=True)
-                
-                df_table_formatted = df_chart_fixed.copy()
-                df_table_formatted["当日の差枚数"] = df_table_formatted["当日の差枚数"].map(lambda x: f"{x:+,}" if x != 0 else "0")
-                df_summary = df_table_formatted.T
-                df_summary.columns = [f"{col}日前" for col in df_summary.columns]
-                st.dataframe(df_summary, use_container_width=True)
+    if graph_data:
+        df_chart = pd.DataFrame(graph_data)
+        df_chart_fixed = df_chart.set_index("index_num").reindex(range(1, 11)).dropna()
+        
+        # ─────────── 🎰 ここから画像表示ロジック ───────────
+        # アイランド秋葉原店の店舗ID
+        papimo_shop_id = "00031715"
+        
+        # 🔗 パピモの「台個別ページ」URLをベースに、リアルタイムスランプグラフの画像URLを生成
+        # ※ もしブラウザで画像URLを確認した際、末尾のパラメータ(daiban)が「view/台番号」などの場合は適宜書き換えてください。
+        real_graph_url = f"https://papimo.jp/h/{papimo_shop_id}/hit/graph?daiban={target_table_num}"
+        
+        # 本物のデータロボのグラフ画像を画面にドンと表示！
+        st.image(
+            real_graph_url, 
+            caption=f"📈 パピモネット公式：{target_table_num}番台 リアルタイム波形", 
+            use_container_width=True
+        )
+        # ─────────── 🎰 ここまで ───────────
+
+        df_table_formatted = df_chart_fixed.copy()
+        df_table_formatted["当日の差枚数"] = df_table_formatted["当日の差枚数"].map(lambda x: f"{x:+,}" if x != 0 else "0")
+        df_summary = df_table_formatted.T
+        df_summary.columns = [f"{col}日前" for col in df_summary.columns]
+        st.dataframe(df_summary, use_container_width=True)
+
     else:
         st.info("😭 条件に合う台は見つかりませんでした。")
 else:
