@@ -79,8 +79,8 @@ if st.button(button_label, type="primary"):
                 st.error("❌ 条件に該当するデータがありませんでした。")
                 st.stop()
                 
-            st.session_state[current_shop_key] = all_combined_data
-            st.session_state[f"web_machines_{current_shop_key}"] = sorted(list(unique_machines))
+            st.session_state.update({current_shop_key: all_combined_data})
+            st.session_state.update({f"web_machines_{current_shop_key}": sorted(list(unique_machines))})
             
             dummy_files = list()
             dummy_mapping = dict()
