@@ -12,7 +12,7 @@ st.markdown('直近の差枚数確認用、高設定が据えてあるわけじ�
 GITHUB_USER = "akihololive"
 GITHUB_REPO = "pachislot-analysis"
 GITHUB_BRANCH = "main"
-GITHUB_TOKEN = "ghp_FlOVwiyWi3noQ1mWIgAV1sahOBykFq1hT21y"
+GITHUB_TOKEN = ""
 
 shop_map = {
     "アイランド秋葉原店": "island",
