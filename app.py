@@ -200,7 +200,7 @@ if current_shop_key in st.session_state:
         
         # 🔗 パピモの「台個別ページ」URLをベースに、リアルタイムスランプグラフの画像URLを生成
         # ※ もしブラウザで画像URLを確認した際、末尾のパラメータ(daiban)が「view/台番号」などの場合は適宜書き換えてください。
-        real_graph_url = f"https://papimo.jp/h/{papimo_shop_id}/hit/graph?daiban={target_table_num}"
+        real_graph_url = f"https://papimo.jp/h/{papimo_shop_id}/hit/graph/{target_table_num}"
         
         # 本物のデータロボのグラフ画像を画面にドンと表示！
         st.image(
