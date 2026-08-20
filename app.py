@@ -78,7 +78,7 @@ if st.button(button_label, type="primary"):
                 
             api_data = api_res.json()
             all_files = sorted([f.get("name") for f in api_data if f.get("name").endswith(".txt")], reverse=True)
-            target_files = all_files[:10]
+            target_files = all_files[:3]
             
             if not target_files:
                 st.warning(f"⚠️ {shop_name}のフォルダ内に .txt ファイルが見つかりませんでした。")
