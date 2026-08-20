@@ -122,7 +122,7 @@ if current_shop_key in st.session_state:
         history_flow_short = "[" + ", ".join(history_k_list) + "]"
         
         show_this_table, star, rank_score = False, "", 0
-                if min_coin == "all":
+            if min_coin == "all":
             show_this_table = True
             # 🔥 過去10日間に向かって連続プラス日数を自動カウント
             plus_streak = 0
