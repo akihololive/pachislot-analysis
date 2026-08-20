@@ -9,8 +9,8 @@ st.set_page_config(page_title="パチスロ 差枚チェッカー", page_icon="�
 st.title("🎰 パチスロ：差枚チェッカー")
 st.markdown('直近の差枚数確認用、高設定が据えてあるわけじゃないよ！<span style="color:red;">※8月20日 更新</span>🐰', unsafe_allow_html=True)
 
-# ⚙️ 設定
-GITHUB_USER = "akihololive"
+# ⚙️ 設定（13行目の「 a 」を大文字の「 A 」に直します！）
+GITHUB_USER = "Akihololive"
 GITHUB_REPO = "pachislot-analysis"
 GITHUB_BRANCH = "main"
 
