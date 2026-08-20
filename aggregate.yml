@@ -1,0 +1,27 @@
+name: 🎰 手動操作型・10日分データ全自動合算処理
+
+on:
+  workflow_dispatch:
+    # 💡 定時自動更新をすべて廃止し、GitHub画面の「ボタン押し」だけで動くようにします
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: ⚙️ リポジトリのコードを読み込み
+      uses: actions/checkout@v4
+
+    - name: 🐍 Python環境のセットアップ
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: 🚀 合算スクリプトを実行
+      run: python aggregate.py
+
+    - name: 💾 作成されたJSONファイルをリポジトリに保存（コミット）
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add all_shops_10days.json
+        git diff --cached --quiet || (git commit -m "🔄 手動実行による全店舗10日分合算データの更新" && git push)
