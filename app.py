@@ -9,8 +9,8 @@ st.set_page_config(page_title="パチスロ 差枚チェッカー", page_icon="�
 st.title("🎰 パチスロ：差枚チェッカー")
 st.markdown('直近の差枚数確認用、高設定が据えてあるわけじゃないよ！<span style="color:red;">※8月20日 更新</span>🐰', unsafe_allow_html=True)
 
-# ⚙️ 設定（13行目の「 a 」を大文字の「 A 」に直します！）
-GITHUB_USER = "Akihololive"
+# ⚙️ 設定
+GITHUB_USER = "akihololive"
 GITHUB_REPO = "pachislot-analysis"
 GITHUB_BRANCH = "main"
 
@@ -41,7 +41,10 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
             folder_name = shop_map.get(selected_shop)
             
             headers = {"User-Agent": "Streamlit-App"}
-            api_url = f"https://github.com/{GITHUB_USER}/{GITHUB_REPO}/contents/data/{folder_name}"
+    # 💡 【完全防衛】バラバラの言葉を足し算して、システム専用の正しいアドレスを作ります！
+    url_base = "https://api.github.com/repos/"
+    api_url = url_base.replace(" ", "") + GITHUB_USER + "/" + GITHUB_REPO + "/contents/data/" + folder_name
+
             
             api_res = requests.get(api_url, headers=headers)
             if api_res.status_code != 200:
