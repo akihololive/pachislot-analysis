@@ -177,41 +177,33 @@ if current_shop_key in st.session_state and st.session_state.get(current_shop_ke
         }
         table_rows.append(row_dict)
         
-if table_rows:
-    if analysis_mode == "据え置き狙い（連続プラス台）" or min_coin == "all":
-        table_rows.sort(key=lambda x: (-x.get("rank_score"), -x.get("col_total_coin"), x.get("table_num_raw")))
-    else:
-        table_rows.sort(key=lambda x: (-x.get("rank_score"), x.get("col_total_coin"), x.get("table_num_raw")))
+# 💡 モードに応じて「店舗名」の列を一番左側に綺麗に回り込ませる処理
+if view_mode == "all":
+    cols_order = ["col_shop_name", "col_table_num", "col_machine_name", "col_status", "col_latest_coin", "col_total_coin", "col_win_loss", "col_avg_coin", "col_history_flow", "rank_score", "unique_key", "table_num_raw"]
+else:
+    cols_order = ["col_table_num", "col_machine_name", "col_status", "col_latest_coin", "col_total_coin", "col_win_loss", "col_avg_coin", "col_history_flow", "rank_score", "unique_key", "table_num_raw"]
 
-    df_display = pd.DataFrame(table_rows)
+df_display = df_display[cols_order]
 
-    # 💡 モードに応じて「店舗名」の列を一番左側に綺麗に回り込ませる処理
-    if view_mode == "all":
-        cols_order = ["col_shop_name", "col_table_num", "col_machine_name", "col_status", "col_latest_coin", "col_total_coin", "col_win_loss", "col_avg_coin", "col_history_flow", "rank_score", "unique_key", "table_num_raw"]
-    else:
-        cols_order = ["col_table_num", "col_machine_name", "col_status", "col_latest_coin", "col_total_coin", "col_win_loss", "col_avg_coin", "col_history_flow", "rank_score", "unique_key", "table_num_raw"]
+selected_rows = st.dataframe(
+        df_display, use_container_width=True, height=400, on_select="rerun", selection_mode="single-row",
+        column_config={
+            "rank_score": None,
+            "台番号_num": None,
+            "前日差枚": st.column_config.NumberColumn(format="%+,d枚", alignment="left"), 
+            "10日間累計": st.column_config.NumberColumn(format="%+,d枚", alignment="left"),
+            "10日平均差枚": st.column_config.NumberColumn(format="%+,d枚", alignment="left"),
+        }
+    )
     
-    df_display = df_display[cols_order]
-
-    selected_rows = st.dataframe(
-            df_display, use_container_width=True, height=400, on_select="rerun", selection_mode="single-row",
-            column_config={
-                "rank_score": None,
-                "台番号_num": None,
-                "前日差枚": st.column_config.NumberColumn(format="%+,d枚", alignment="left"), 
-                "10日間累計": st.column_config.NumberColumn(format="%+,d枚", alignment="left"),
-                "10日平均差枚": st.column_config.NumberColumn(format="%+,d枚", alignment="left"),
-            }
-        )
-        
 if selected_rows and "rows" in selected_rows.get("selection", {}) and selected_rows.get("selection", {}).get("rows"):
-    row_idx_list = selected_rows.get("selection", {}).get("rows")
-    if isinstance(row_idx_list, list) and len(row_idx_list) > 0:
-        row_idx = row_idx_list[0]
-    else:
-        row_idx = 0
+row_idx_list = selected_rows.get("selection", {}).get("rows")
+if isinstance(row_idx_list, list) and len(row_idx_list) > 0:
+    row_idx = row_idx_list[0]
 else:
     row_idx = 0
+else:
+row_idx = 0
 
 target_key = df_display.iloc[row_idx].get("unique_key")
 target_table_num = df_display.iloc[row_idx].get("table_num_raw")
@@ -219,61 +211,61 @@ target_machine_name = str(df_display.iloc[row_idx].get("col_machine_name"))
 target_shop_name = df_display.iloc[row_idx].get("col_shop_name")
 
 if target_key:
-    st.write("---")
-    st.write(f"### 📊 【{target_shop_name}】{target_table_num}番台（{target_machine_name}）の10日間差枚数データ（日別）")
-    target_history = all_data.get(target_key, {}).get("history", {})
-    graph_data = []
+st.write("---")
+st.write(f"### 📊 【{target_shop_name}】{target_table_num}番台（{target_machine_name}）の10日間差枚数データ（日別）")
+target_history = all_data.get(target_key, {}).get("history", {})
+graph_data = []
+
+for idx in reversed(range(1, 11)):
+    v = target_history.get(str(idx), target_history.get(idx, None))
+    if v is not None:
+        graph_data.append({"index_num": idx, "value_coin": v})
     
-    for idx in reversed(range(1, 11)):
-        v = target_history.get(str(idx), target_history.get(idx, None))
-        if v is not None:
-            graph_data.append({"index_num": idx, "value_coin": v})
+if graph_data:
+    df_chart = pd.DataFrame(graph_data)
+    cum_sum_data = np.cumsum(df_chart.get("value_coin"))
+    
+    y_values = []
+    for val in cum_sum_data:
+        y_values.append(int(val))
         
-    if graph_data:
-        df_chart = pd.DataFrame(graph_data)
-        cum_sum_data = np.cumsum(df_chart.get("value_coin"))
+    x_labels = ["スタート"]
+    for row_item in graph_data:
+        x_labels.append(f"{row_item.get('index_num')}日前")
+    
+    fig = go.Figure()
+    zero_y = np.zeros(len(x_labels)).tolist()
         
-        y_values = []
-        for val in cum_sum_data:
-            y_values.append(int(val))
-            
-        x_labels = ["スタート"]
-        for row_item in graph_data:
-            x_labels.append(f"{row_item.get('index_num')}日前")
-        
-        fig = go.Figure()
-        zero_y = np.zeros(len(x_labels)).tolist()
-            
-        fig.add_trace(go.Scatter(
-            x=x_labels, y=zero_y, mode="lines", 
-            line=dict(color="rgba(255, 255, 255, 0.3)", width=1, dash="dash"),
-            hoverinfo="skip"
-        ))
-        
-        fig.add_trace(go.Scatter(
-            x=x_labels, y=y_values, mode="lines+markers", 
-            line=dict(color="#ff9900", width=3), marker=dict(color="#ff9900", size=6),
-            hovertemplate="<b>%{x}時点の累計差枚</b><br>差枚数: %{y:+,}枚<extra></extra>"
-        ))
-        
-        fig.update_layout(
-            margin=dict(l=20, r=20, t=10, b=10), height=500, showlegend=False, template="plotly_dark",
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(20,20,20,0.8)",
-            yaxis=dict(zeroline=True, zerolinewidth=1.5, zerolinecolor="white", tickformat="+,d", gridcolor="rgba(255, 255, 255, 0.1)"),
-            xaxis=dict(gridcolor="rgba(255, 255, 255, 0.05)")
-        )
-        
-        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-        
-        summary_cols = []
-        summary_vals = []
-        for row_item in graph_data:
-            summary_cols.append(f"{row_item.get('index_num')}日前")
-            v = row_item.get("value_coin")
-            summary_vals.append(f"{v:+,}" if v != 0 else "0")
-        
-        df_summary = pd.DataFrame([summary_vals], columns=summary_cols, index=["当日の差枚数"])
-        st.dataframe(df_summary, use_container_width=True)
+    fig.add_trace(go.Scatter(
+        x=x_labels, y=zero_y, mode="lines", 
+        line=dict(color="rgba(255, 255, 255, 0.3)", width=1, dash="dash"),
+        hoverinfo="skip"
+    ))
+    
+    fig.add_trace(go.Scatter(
+        x=x_labels, y=y_values, mode="lines+markers", 
+        line=dict(color="#ff9900", width=3), marker=dict(color="#ff9900", size=6),
+        hovertemplate="<b>%{x}時点の累計差枚</b><br>差枚数: %{y:+,}枚<extra></extra>"
+    ))
+    
+    fig.update_layout(
+        margin=dict(l=20, r=20, t=10, b=10), height=500, showlegend=False, template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(20,20,20,0.8)",
+        yaxis=dict(zeroline=True, zerolinewidth=1.5, zerolinecolor="white", tickformat="+,d", gridcolor="rgba(255, 255, 255, 0.1)"),
+        xaxis=dict(gridcolor="rgba(255, 255, 255, 0.05)")
+    )
+    
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+    
+    summary_cols = []
+    summary_vals = []
+    for row_item in graph_data:
+        summary_cols.append(f"{row_item.get('index_num')}日前")
+        v = row_item.get("value_coin")
+        summary_vals.append(f"{v:+,}" if v != 0 else "0")
+    
+    df_summary = pd.DataFrame([summary_vals], columns=summary_cols, index=["当日の差枚数"])
+    st.dataframe(df_summary, use_container_width=True)
 else:
-    st.info("☝️ 上のボタンを押すと、最新の合算データをロードします！")
+st.info("☝️ 上のボタンを押すと、最新の合算データをロードします！")
 
