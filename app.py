@@ -31,6 +31,7 @@ st.write("---")
 view_mode = st.radio("mode", ["single", "all"], horizontal=True)
 
 if view_mode == "single":
+    selected_shop = st.selectbox("SHOP", list(shop_map.keys()))
     shops_to_scan = [selected_shop]
     current_shop_key = f"web_data_{selected_shop}"
 else:
