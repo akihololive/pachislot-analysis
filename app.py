@@ -26,173 +26,185 @@ shop_map = {
     "楽園アメ横店": "rakuen_ameyoko", 
 }
 
-selected_shop = st.selectbox("🏢 分析する店舗を選択してください", list(shop_map.keys()))
+# 💡 1店舗個別か、全店舗一括かを選ぶトグルを安全に追加
+st.write("---")
+view_mode = st.radio("mode", ["single", "all"], horizontal=True)
+
+if view_mode == "single":
+    shops_to_scan = [selected_shop]
+    current_shop_key = f"web_data_{selected_shop}"
+else:
+    shops_to_scan = list(shop_map.keys())
+    current_shop_key = "web_data_ALL_SHOPS"
 
 st.write("---")
 col1, col2 = st.columns(2)
 with col1:
-    # 💡 初期状態（index=0）を「すべての台」に設定
     min_coin = st.selectbox("💰 最低差枚数（最新日ベース）", ["all", -1000, -500, 0, 500, 1000, 2000, 3000, 5000], index=0, format_func=lambda x: "✨ すべての台（制限なし）" if x == "all" else ("前日プラス台" if x == 0 else f"{x:+,}枚以上"))
 with col2:
     analysis_mode = st.radio("🔍 分析フォーカス", ["据え置き狙い（連続プラス台）", "設定上げ狙い（連続凹み台）"], horizontal=True)
 
 st.write("---")
-current_shop_key = f'web_data_{selected_shop}'
+button_label = f"🔄 【{selected_shop}】の最新10日分データをスキャン" if view_mode == "single" else "🔥 全8店舗の最新10日分データを一括ロード（まとめて表示）"
 
-if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキャン", type="primary"):
-    with st.spinner(f"⏳ ネット上の【{selected_shop}】フォルダからデータを取得中..."):
+if st.button(button_label, type="primary"):
+    with st.spinner("⏳ GitHubから最新の10日分データをロード中..."):
         try:
-            folder_name = shop_map[selected_shop]
+            json_url = f"https://githubusercontent.com{GITHUB_USER}/{GITHUB_REPO}/{GITHUB_BRANCH}/all_shops_10days.json"
+            res = requests.get(json_url)
             
-            headers = {"User-Agent": "Streamlit-App"}
-            api_url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/data/{folder_name}"
-            
-            api_res = requests.get(api_url, headers=headers)
-            if api_res.status_code != 200:
-                st.error(f"❌ GitHubからファイル一覧を取得できませんでした。(Status: {api_res.status_code})")
+            if res.status_code != 200:
+                st.error("❌ 合算データファイル（all_shops_10days.json）の読み込みに失敗しました。GitHubのActionsでファイルが正しく作られているか確認してください。")
                 st.stop()
                 
-            api_data = api_res.json()
-            all_files = sorted([f["name"] for f in api_data if f["name"].endswith(".txt")], reverse=True)
-            target_files = all_files[:10]
+            raw_json_data = res.json()
+            all_combined_data = dict()
+            unique_machines = set()
             
-            if not target_files:
-                st.error(f"❌ {selected_shop}のフォルダ内に .txt ファイルが見つかりませんでした。")
+            for u_key, info in raw_json_data.items():
+                s_name = info.get("shop_name")
+                if s_name in shops_to_scan:
+                    t_num = info.get("table_num")
+                    dict_key = t_num if view_mode == "single" else u_key
+                    
+                    all_combined_data[dict_key] = {
+                        "name": info.get("name"),
+                        "shop_name": s_name,
+                        "history": info.get("history")
+                    }
+                    unique_machines.add(info.get("name"))
+            
+            if not all_combined_data:
+                st.error("❌ 条件に該当するデータがありませんでした。")
                 st.stop()
-            
-            day_mapping = {fname: (index + 1) for index, fname in enumerate(target_files)}
-            all_data, unique_machines = {}, set()
-            success_count = 0
-            
-            for fname in target_files:
-                day_num = day_mapping[fname]
-                file_raw_url = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/{GITHUB_BRANCH}/data/{folder_name}/{fname}"
                 
-                file_res = requests.get(file_raw_url)
-                if file_res.status_code == 200:
-                    success_count += 1
-                    lines = file_res.content.decode('utf-8').split("\n")
-                    for line in lines:
-                        line = line.strip()
-                        if not line or "機種" in line or "台番" in line: continue
-                        parts = re.split(r'\t+|\s{2,}', line)
-                        if len(parts) >= 3:
-                            name = parts[0].strip()
-                            table_text = parts[1].strip()
-                            coin_text = parts[2].strip()
-                            clean_coin = coin_text.replace("枚", "").replace(",", "").replace("+", "").strip()
-                            try:
-                                coin, table_num = int(clean_coin), int(table_text)
-                                if table_num not in all_data: all_data[table_num] = {"name": name, "history": {}}
-                                all_data[table_num]["history"][day_num] = coin
-                                unique_machines.add(name)
-                            except ValueError: continue
-
-            if success_count == 0:
-                st.error(f"❌ データファイルを1つも読み込めませんでした。")
-                st.stop()
+            st.session_state[current_shop_key] = all_combined_data
+            st.session_state[f"web_machines_{current_shop_key}"] = sorted(list(unique_machines))
             
-            st.session_state[current_shop_key] = all_data
-            st.session_state[f"web_machines_{selected_shop}"] = sorted(list(unique_machines))
-            st.session_state[f"web_files_{selected_shop}"] = target_files
-            st.session_state[f"web_mapping_{selected_shop}"] = day_mapping
-            st.success(f"✅ 【{selected_shop}】のデータスキャンに成功しました！（読み込み完了: {success_count}日分）")
+            dummy_files = list()
+            dummy_mapping = dict()
+            for i in range(1, 11):
+                dummy_files.append(str(i))
+                dummy_mapping[str(i)] = i
+            st.session_state[f"web_files_{current_shop_key}"] = dummy_files
+            st.session_state[f"web_mapping_{current_shop_key}"] = dummy_mapping
+            
+            st.success(f"✅ ロード成功！ 合計 {len(all_combined_data)} 台のフルデータを一瞬で読み込みました。")
         except Exception as e:
             st.error(f"❌ エラーが発生しました: {str(e)}")
 
 if current_shop_key in st.session_state:
-    all_data = st.session_state[current_shop_key]
-    unique_machines = st.session_state[f"web_machines_{selected_shop}"]
-    target_files = st.session_state[f"web_files_{selected_shop}"]
-    day_mapping = st.session_state[f"web_mapping_{selected_shop}"]
+    all_data = st.session_state.get(current_shop_key)
+    unique_machines = st.session_state.get(f"web_machines_{current_shop_key}")
+    target_files = st.session_state.get(f"web_files_{current_shop_key}")
+    day_mapping = st.session_state.get(f"web_mapping_{current_shop_key}")
     
     selected_machine = st.selectbox("🎯 機種名でピンポイント絞り込み", ["✨ すべての機種"] + unique_machines)
     st.write(f"## 🏆 【{selected_shop}】分析結果")
     
-    table_rows = []
-    for table_num, info in all_data.items():
-        if selected_machine != "✨ すべての機種" and info["name"] != selected_machine: continue
-        history = info["history"]
-        latest_coin = history.get(1, None)
-        if latest_coin is None: continue
+table_rows = []
+for unique_key, info in all_data.items():
+    if selected_machine != "✨ すべての機種" and info.get("name") != selected_machine: continue
+    history = info.get("history")
+    
+    # 💡 1日前、過去10日間のデータを安全に取得
+    latest_coin = history.get("1", history.get(1, None))
+    if latest_coin is None: continue
+    
+    plus_days = sum(1 for v in history.values() if v > 0)
+    minus_days = sum(1 for v in history.values() if v <= 0)
+    total_coin = sum(history.values())
+    
+    history_k_list = []
+    for i in range(1, 11):
+        val = history.get(str(i), history.get(i, None))
+        if val is not None:
+            history_k_list.append("0" if val == 0 else f"{val/1000:+.1f}k".replace(".0k", "k"))
+    history_flow_short = "[" + ", ".join(history_k_list) + "]"
+    
+    show_this_table, star, rank_score = False, "", 0
+    if min_coin == "all":
+        show_this_table = True
+        plus_streak = 0
+        if latest_coin > 0:
+            plus_streak = 1
+            for idx in range(2, 11):
+                v = history.get(str(idx), history.get(idx, 0))
+                if v > 0: plus_streak += 1
+                else: break
         
-        plus_days = sum(1 for v in history.values() if v > 0)
-        minus_days = sum(1 for v in history.values() if v <= 0)
-        total_coin = sum(history.values())
-        
-        history_k_list = []
-        for fname in target_files:
-            if day_mapping[fname] in history:
-                v = history[day_mapping[fname]]
-                history_k_list.append("0" if v == 0 else f"{v/1000:+.1f}k".replace(".0k", "k"))
-        history_flow_short = "[" + ", ".join(history_k_list) + "]"
-        
-        show_this_table, star, rank_score = False, "", 0
-        if min_coin == "all":
-            show_this_table = True
-            # 🔥 過去10日間に向かって実際の連続プラス日数を自動カウント！
-            plus_streak = 0
-            if latest_coin > 0:
-                plus_streak = 1
-                for idx in range(2, 11):
-                    if history.get(idx, 0) > 0: plus_streak += 1
-                    else: break
-            
-            if plus_streak >= 3: star, rank_score = f"🔥 {plus_streak}日連続プラス", plus_streak
-            elif plus_streak == 2: star, rank_score = "🔶 2日連続プラス", 2
-            elif plus_streak == 1: star, rank_score = "🔸 前日のみプラス", 1
-            else: star, rank_score = "💧 凹み台", 0
-        else:
-            if analysis_mode == "据え置き狙い（連続プラス台）":
-                if latest_coin >= min_coin:
-                    show_this_table = True
-                    # 🔥 据え置きモードの時も同様に自動カウント
-                    plus_streak = 0
-                    if latest_coin > 0:
-                        plus_streak = 1
-                        for idx in range(2, 11):
-                            if history.get(idx, 0) > 0: plus_streak += 1
-                            else: break
-                    
-                    if plus_streak >= 3: star, rank_score = f"🔥 {plus_streak}日連続プラス", plus_streak
-                    elif plus_streak == 2: star, rank_score = "🔶 2日連続プラス", 2
-                    else: star, rank_score = "🔸 前日のみプラス", 1
-            elif analysis_mode == "設定上げ狙い（連続凹み台）":
+        if plus_streak >= 3: star, rank_score = f"🔥 {plus_streak}日連続プラス", plus_streak
+        elif plus_streak == 2: star, rank_score = "🔶 2日連続プラス", 2
+        elif plus_streak == 1: star, rank_score = "🔸 前日のみプラス", 1
+        else: star, rank_score = "💧 凹み台", 0
+    else:
+        if analysis_mode == "据え置き狙い（連続プラス台）":
+            if latest_coin >= min_coin:
+                show_this_table = True
+                plus_streak = 0
+                if latest_coin > 0:
+                    plus_streak = 1
+                    for idx in range(2, 11):
+                        v = history.get(str(idx), history.get(idx, 0))
+                        if v > 0: plus_streak += 1
+                        else: break
+                
+                if plus_streak >= 3: star, rank_score = f"🔥 {plus_streak}日連続プラス", plus_streak
+                elif plus_streak == 2: star, rank_score = "🔶 2日連続プラス", 2
+                else: star, rank_score = "🔸 前日のみプラス", 1
+        elif analysis_mode == "設定上げ狙い（連続凹み台）":
+            if latest_coin < 0:
+                show_this_table = True
+                minus_streak = 0
                 if latest_coin < 0:
-                    show_this_table = True
-                    # 💎 設定上げモードの時は連続凹み日数を自動カウント！
-                    minus_streak = 0
-                    if latest_coin < 0:
-                        minus_streak = 1
-                        for idx in range(2, 11):
-                            if history.get(idx, 0) < 0: minus_streak += 1
-                            else: break
-                    
-                    if minus_streak >= 3: star, rank_score = f"💎 {minus_streak}日連続凹み", minus_streak
-                    elif minus_streak == 2: star, rank_score = "🔷 2日連続凹み", 2
-                    else: star, rank_score = "🔹 前日のみ凹み", 1
+                    minus_streak = 1
+                    for idx in range(2, 11):
+                        v = history.get(str(idx), history.get(idx, 0))
+                        if v < 0: minus_streak += 1
+                        else: break
+                
+                if minus_streak >= 3: star, rank_score = f"💎 {minus_streak}日連続凹み", minus_streak
+                elif minus_streak == 2: star, rank_score = "🔷 2日連続凹み", 2
+                else: star, rank_score = "🔹 前日のみ凹み", 1
 
-        if show_this_table:
-            total_days = plus_days + minus_days
-            avg_coin = int(total_coin / total_days) if total_days > 0 else 0
-            table_rows.append({
-                "rank_score": rank_score, "台番号_num": table_num, "台番号": f"📈 {table_num}番", "機種名": info["name"],
-                "ステータス": star, "前日差枚": latest_coin, "10日間累計": total_coin, 
-                "勝率履歴": f"{plus_days}勝/{minus_days}敗", "10日平均差枚": avg_coin, "10日間のデータ推移(新しい順)": history_flow_short
-            })
-            
-    if table_rows:
-        # 💡 【完全修正】連続日数（rank_score）が長いお宝台を最上部に自動ソート！
-        if analysis_mode == "据え置き狙い（連続プラス台）" or min_coin == "all":
-            # 据え置き時は連続プラス日数が長い順（さらに同数の場合は累計枚数が多い順）
-            table_rows.sort(key=lambda x: (-x["rank_score"], -x["10日間累計"], x["台番号_num"]))
-        else:
-            # 設定上げ時は連続凹み日数が長い順（さらに同数の場合はマイナス累計が大きい順）
-            table_rows.sort(key=lambda x: (-x["rank_score"], x["10日間累計"], x["台番号_num"]))
-
-        df_display = pd.DataFrame(table_rows)
-
+    if show_this_table:
+        total_days = plus_days + minus_days
+        avg_coin = int(total_coin / total_days) if total_days > 0 else 0
         
+        # 💡 各列のデータを大かっこを使わない安全な辞書形式で定義
+        t_num_val = info.get("table_num")
+        row_dict = {
+            "rank_score": rank_score, 
+            "unique_key": unique_key, 
+            "table_num_raw": t_num_val, 
+            "col_table_num": f"📈 {t_num_val}番", 
+            "col_machine_name": info.get("name"),
+            "col_status": star, 
+            "col_latest_coin": latest_coin, 
+            "col_total_coin": total_coin, 
+            "col_win_loss": f"{plus_days}勝/{minus_days}敗", 
+            "col_avg_coin": avg_coin, 
+            "col_history_flow": history_flow_short,
+            "col_shop_name": info.get("shop_name")
+        }
+        table_rows.append(row_dict)
+        
+if table_rows:
+    if analysis_mode == "据え置き狙い（連続プラス台）" or min_coin == "all":
+        table_rows.sort(key=lambda x: (-x.get("rank_score"), -x.get("col_total_coin"), x.get("table_num_raw")))
+    else:
+        table_rows.sort(key=lambda x: (-x.get("rank_score"), x.get("col_total_coin"), x.get("table_num_raw")))
+
+    df_display = pd.DataFrame(table_rows)
+
+    # 💡 モードに応じて「店舗名」の列を一番左側に綺麗に回り込ませる処理
+    if view_mode == "all":
+        cols_order = ["col_shop_name", "col_table_num", "col_machine_name", "col_status", "col_latest_coin", "col_total_coin", "col_win_loss", "col_avg_coin", "col_history_flow", "rank_score", "unique_key", "table_num_raw"]
+    else:
+        cols_order = ["col_table_num", "col_machine_name", "col_status", "col_latest_coin", "col_total_coin", "col_win_loss", "col_avg_coin", "col_history_flow", "rank_score", "unique_key", "table_num_raw"]
+    
+    df_display = df_display[cols_order]
+
         selected_rows = st.dataframe(
             df_display, use_container_width=True, height=400, on_select="rerun", selection_mode="single-row",
             column_config={
