@@ -216,102 +216,76 @@ if table_rows:
             }
         )
         
-        # 💡 【復活】クリックしても絶対にエラーが出ない、かつ最初から一番上が選ばれる安全な処理
-        if selected_rows and "rows" in selected_rows["selection"] and selected_rows["selection"]["rows"]:
-            row_idx = selected_rows["selection"]["rows"][0]
-        else:
-            row_idx = 0
-        
-        # 💡 文字列の中から数字（台番号）だけを100%安全にガチで抽出する最強の処理！
-        target_table_num = int(re.sub(r"\D", "", str(df_display.iloc[row_idx]["台番号"])))
-
-        target_machine_name = str(df_display.iloc[row_idx]["機種名"])
-        
-        if target_table_num:
-            st.write("---")
-            st.write(f"### 📊 {target_table_num}番台（{target_machine_name}）の10日間差枚数データ（日別）")
-            target_history = all_data[target_table_num]["history"]
-            graph_data = []
-            
-            for fname in reversed(target_files):
-                day_num = day_mapping[fname]
-                if day_num in target_history: graph_data.append({"index_num": day_num, "当日の差枚数": target_history[day_num]})
-                
-            if graph_data:
-                df_chart = pd.DataFrame(graph_data)
-                df_chart_fixed = df_chart.set_index("index_num").reindex(range(1, 11)).dropna()
-                
-                # 💡 グラフの時系列を「古い順（10日前 ➡️ 1日前）」に180度ひっくり返します！
-                df_chronological = df_chart_fixed.sort_index(ascending=False)
-                
-                # 📈 【累積スランプグラフ化】過去のデータから順番に安全に積み上げます
-                cum_sum_data = np.cumsum(df_chronological["当日の差枚数"])
-                
-                # 💡 文字化け対策の安全な配列組み立て
-                y_values = list()
-                y_values.append(0)
-                for val in cum_sum_data:
-                    y_values.append(int(val))
-                    
-                x_labels = list()
-                x_labels.append("スタート")
-                for idx in df_chronological.index:
-                    x_labels.append(f"{idx}日前")
-                
-                fig = go.Figure()
-                
-                # 0基準線（白点線）
-                zero_y = list()
-                for _ in range(len(x_labels)):
-                    zero_y.append(0)
-                    
-                fig.add_trace(go.Scatter(
-                    x=x_labels, 
-                    y=zero_y, 
-                    mode="lines", 
-                    line=dict(color="rgba(255, 255, 255, 0.3)", width=1, dash="dash"),
-                    hoverinfo="skip"
-                ))
-                
-                # 鮮やかなオレンジ色の折れ線（過去から未来へ進むデータロボ仕様！）
-                fig.add_trace(go.Scatter(
-                    x=x_labels,
-                    y=y_values,
-                    mode="lines+markers", 
-                    line=dict(color="#ff9900", width=3), 
-                    marker=dict(color="#ff9900", size=6),
-                    hovertemplate="<b>%{x}時点の累計差枚</b><br>差枚数: %{y:+,}枚<extra></extra>"
-                ))
-                
-                fig.update_layout(
-                    margin=dict(l=20, r=20, t=10, b=10),
-                    height=900,
-                    showlegend=False,
-                    template="plotly_dark",
-                    paper_bgcolor="rgba(0,0,0,0)", 
-                    plot_bgcolor="rgba(20,20,20,0.8)",
-                    yaxis=dict(
-                        zeroline=True,
-                        zerolinewidth=1.5,
-                        zerolinecolor="white",
-                        tickformat="+,d",
-                        gridcolor="rgba(255, 255, 255, 0.1)"
-                    ),
-                    xaxis=dict(
-                        gridcolor="rgba(255, 255, 255, 0.05)"
-                    )
-                )
-                
-                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-                
-                # 一番下の詳細データ表もグラフの左から右（古い順）の流れと完全に一致させます！
-                df_table_formatted = df_chronological.copy()
-                df_table_formatted["当日の差枚数"] = df_table_formatted["当日の差枚数"].map(lambda x: f"{x:+,}" if x != 0 else "0")
-                df_summary = df_table_formatted.T
-                df_summary.columns = [f"{col}日前" for col in df_summary.columns]
-                st.dataframe(df_summary, use_container_width=True)
-
+if selected_rows and "rows" in selected_rows.get("selection", {}) and selected_rows.get("selection", {}).get("rows"):
+    row_idx_list = selected_rows.get("selection", {}).get("rows")
+    if isinstance(row_idx_list, list) and len(row_idx_list) > 0:
+        row_idx = row_idx_list[0]
     else:
-        st.info("😭 条件に合う台は見つかりませんでした。")
+        row_idx = 0
 else:
-    st.info("☝️ 上のボタンを押すと、全自動で各フォルダからデータを読み込みます！")
+    row_idx = 0
+
+target_key = df_display.iloc[row_idx].get("unique_key")
+target_table_num = df_display.iloc[row_idx].get("table_num_raw")
+target_machine_name = str(df_display.iloc[row_idx].get("col_machine_name"))
+target_shop_name = df_display.iloc[row_idx].get("col_shop_name")
+
+if target_key:
+    st.write("---")
+    st.write(f"### 📊 【{target_shop_name}】{target_table_num}番台（{target_machine_name}）の10日間差枚数データ（日別）")
+    target_history = all_data.get(target_key, {}).get("history", {})
+    graph_data = []
+    
+    for idx in reversed(range(1, 11)):
+        v = target_history.get(str(idx), target_history.get(idx, None))
+        if v is not None:
+            graph_data.append({"index_num": idx, "value_coin": v})
+        
+    if graph_data:
+        df_chart = pd.DataFrame(graph_data)
+        cum_sum_data = np.cumsum(df_chart.get("value_coin"))
+        
+        y_values = []
+        for val in cum_sum_data:
+            y_values.append(int(val))
+            
+        x_labels = ["スタート"]
+        for row_item in graph_data:
+            x_labels.append(f"{row_item.get('index_num')}日前")
+        
+        fig = go.Figure()
+        zero_y = np.zeros(len(x_labels)).tolist()
+            
+        fig.add_trace(go.Scatter(
+            x=x_labels, y=zero_y, mode="lines", 
+            line=dict(color="rgba(255, 255, 255, 0.3)", width=1, dash="dash"),
+            hoverinfo="skip"
+        ))
+        
+        fig.add_trace(go.Scatter(
+            x=x_labels, y=y_values, mode="lines+markers", 
+            line=dict(color="#ff9900", width=3), marker=dict(color="#ff9900", size=6),
+            hovertemplate="<b>%{x}時点の累計差枚</b><br>差枚数: %{y:+,}枚<extra></extra>"
+        ))
+        
+        fig.update_layout(
+            margin=dict(l=20, r=20, t=10, b=10), height=500, showlegend=False, template="plotly_dark",
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(20,20,20,0.8)",
+            yaxis=dict(zeroline=True, zerolinewidth=1.5, zerolinecolor="white", tickformat="+,d", gridcolor="rgba(255, 255, 255, 0.1)"),
+            xaxis=dict(gridcolor="rgba(255, 255, 255, 0.05)")
+        )
+        
+        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+        
+        summary_cols = []
+        summary_vals = []
+        for row_item in graph_data:
+            summary_cols.append(f"{row_item.get('index_num')}日前")
+            v = row_item.get("value_coin")
+            summary_vals.append(f"{v:+,}" if v != 0 else "0")
+        
+        df_summary = pd.DataFrame([summary_vals], columns=summary_cols, index=["当日の差枚数"])
+        st.dataframe(df_summary, use_container_width=True)
+else:
+    st.info("☝️ 上のボタンを押すと、最新の合算データをロードします！")
+
