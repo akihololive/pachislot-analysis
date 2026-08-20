@@ -41,7 +41,7 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
             folder_name = shop_map.get(selected_shop)
             
             headers = {"User-Agent": "Streamlit-App"}
-            api_url = f"https://github.com{GITHUB_USER}/{GITHUB_REPO}/contents/data/{folder_name}"
+            api_url = f"https://github.com/{GITHUB_USER}/{GITHUB_REPO}/contents/data/{folder_name}"
             
             api_res = requests.get(api_url, headers=headers)
             if api_res.status_code != 200:
