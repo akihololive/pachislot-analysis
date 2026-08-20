@@ -95,7 +95,7 @@ if st.button(button_label, type="primary"):
             st.error(f"❌ エラーが発生しました: {str(e)}")
 
 if current_shop_key in st.session_state and st.session_state.get(current_shop_key):
-        all_data = st.session_state.get(current_shop_key)
+    all_data = st.session_state.get(current_shop_key)
     unique_machines = st.session_state.get(f"web_machines_{current_shop_key}")
     target_files = st.session_state.get(f"web_files_{current_shop_key}")
     day_mapping = st.session_state.get(f"web_mapping_{current_shop_key}")
