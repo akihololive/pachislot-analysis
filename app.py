@@ -191,26 +191,69 @@ if current_shop_key in st.session_state:
                 if day_num in target_history: graph_data.append({"index_num": day_num, "当日の差枚数": target_history[day_num]})
                 
     if graph_data:
+        # 1. データをPandasのDataFrameに変換し、1日前〜10日前で並び替え
         df_chart = pd.DataFrame(graph_data)
-        df_chart_fixed = df_chart.set_index("index_num").reindex(range(1, 11)).dropna()
+        df_chart_fixed = df_chart.set_index("index_num").reindex(range(1, 11)).fillna(0)
         
-        # ─────────── 🎰 ここから画像表示ロジック ───────────
-        # アイランド秋葉原店の店舗ID
-        papimo_shop_id = "00031715"
+        # 2. 【時系列の修正】過去から現在（10日前 ➡️ 1日前）へ左から右に時間が流れるように並び替え
+        df_chronological = df_chart_fixed.sort_index(ascending=False)
         
-        # 🔗 パピモの「台個別ページ」URLをベースに、リアルタイムスランプグラフの画像URLを生成
-        # ※ もしブラウザで画像URLを確認した際、末尾のパラメータ(daiban)が「view/台番号」などの場合は適宜書き換えてください。
-        real_graph_url = f"https://papimo.jp/h/{papimo_shop_id}/hit/graph/{target_table_num}"
+        # 3. 10日間の差枚数の「累積和（スランプグラフの波）」を計算
+        # 0からスタートして、日々のプラスマイナスを足し合わせていく
+        import numpy as np
+        cum_sum_data = np.cumsum(df_chronological["当日の差枚数"])
+        # グラフの開始点を0にするために、先頭に0を追加
+        y_values = [0] + list(cum_sum_data)
+        x_labels = ["スタート"] + [f"{idx}日前" for idx in df_chronological.index]
         
-        # 本物のデータロボのグラフ画像を画面にドンと表示！
-        st.image(
-            real_graph_url, 
-            caption=f"📈 パピモネット公式：{target_table_num}番台 リアルタイム波形", 
-            use_container_width=True
+        # 📈 Plotlyでパピモ・サイトセブン風のスランプグラフを完全再現
+        import plotly.graph_objects as go
+        fig = go.Figure()
+        
+        # プラマイゼロの基準線（0ライン）を点線で配置
+        fig.add_trace(go.Scatter(
+            x=x_labels, 
+            y=[0] * len(x_labels), 
+            mode='lines', 
+            line=dict(color='rgba(255, 255, 255, 0.4)', width=1, dash='dash'),
+            hoverinfo='skip'
+        ))
+        
+        # メインのスランプグラフ（サイトセブン御用達のオレンジ色の折れ線波形）
+        fig.add_trace(go.Scatter(
+            x=x_labels,
+            y=y_values,
+            mode='lines+markers', # 線と点で繋ぐ
+            line=dict(color='#ff9900', width=3), # 鮮やかなデータロボのオレンジ
+            marker=dict(color='#ff9900', size=6),
+            hovertemplate="<b>%{x}時点の累計差枚</b><br>差枚数: %{y:+,}枚<extra></extra>"
+        ))
+        
+        # データロボ風ダークモード用のレイアウト調整
+        fig.update_layout(
+            margin=dict(l=20, r=20, t=10, b=10),
+            height=300,
+            showlegend=False,
+            template="plotly_dark",
+            paper_bgcolor='rgba(0,0,0,0)', # 背景をStreamlitになじませる
+            plot_bgcolor='rgba(20,20,20,0.8)',
+            yaxis=dict(
+                zeroline=True,
+                zerolinewidth=1.5,
+                zerolinecolor='white',
+                tickformat="+,d",
+                gridcolor='rgba(255, 255, 255, 0.1)'
+            ),
+            xaxis=dict(
+                gridcolor='rgba(255, 255, 255, 0.05)'
+            )
         )
-        # ─────────── 🎰 ここまで ───────────
+        
+        # 📸 自作のスランプグラフを出力
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
-        df_table_formatted = df_chart_fixed.copy()
+        # 下のデータテーブルも時系列を合わせて綺麗に表示
+        df_table_formatted = df_chronological.copy()
         df_table_formatted["当日の差枚数"] = df_table_formatted["当日の差枚数"].map(lambda x: f"{x:+,}" if x != 0 else "0")
         df_summary = df_table_formatted.T
         df_summary.columns = [f"{col}日前" for col in df_summary.columns]
