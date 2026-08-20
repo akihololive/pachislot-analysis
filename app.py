@@ -49,8 +49,14 @@ st.write("---")
 button_label = f"🔄 【{selected_shop}】の最新10日分データをスキャン" if view_mode == "single" else "🔥 全8店舗の最新10日分データを一括ロード（まとめて表示）"
 
 if st.button(button_label, type="primary"):
-    with st.spinner("⏳ GitHubから最新の10日分データをロード中..."):
+    with st.spinner("LOADING"):
         try:
+            selected_shop_id = shop_map.get(selected_shop, selected_shop)
+            if view_mode == "single":
+                shops_to_scan = list([selected_shop_id])
+            else:
+                shops_to_scan = list(shop_map.values())
+
             json_url = f"https://githubusercontent.com{GITHUB_USER}/{GITHUB_REPO}/{GITHUB_BRANCH}/all_shops_10days.json"
             res = requests.get(json_url)
             
