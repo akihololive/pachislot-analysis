@@ -197,13 +197,13 @@ selected_rows = st.dataframe(
     )
     
 if selected_rows and "rows" in selected_rows.get("selection", {}) and selected_rows.get("selection", {}).get("rows"):
-row_idx_list = selected_rows.get("selection", {}).get("rows")
-if isinstance(row_idx_list, list) and len(row_idx_list) > 0:
-    row_idx = row_idx_list[0]
+    row_idx_list = selected_rows.get("selection", {}).get("rows")
+    if isinstance(row_idx_list, list) and len(row_idx_list) > 0:
+        row_idx = row_idx_list[0]
+    else:
+        row_idx = 0
 else:
     row_idx = 0
-else:
-row_idx = 0
 
 target_key = df_display.iloc[row_idx].get("unique_key")
 target_table_num = df_display.iloc[row_idx].get("table_num_raw")
