@@ -267,5 +267,5 @@ if target_key:
         df_summary = pd.DataFrame([summary_vals], columns=summary_cols, index=["当日の差枚数"])
         st.dataframe(df_summary, use_container_width=True)
     else:
-    st.info("☝️ 上のボタンを押すと、最新の合算データをロードします！")
+        st.info("☝️ 上のボタンを押すと、最新の合算データをロードします！")
     
