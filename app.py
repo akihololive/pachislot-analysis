@@ -94,16 +94,18 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
         except Exception as e:
             st.error(f"❌ エラーが発生しました: {str(e)}")
 
-if current_shop_key in st.session_state:
-    all_data = st.session_state[current_shop_key]
-    unique_machines = st.session_state[f"web_machines_{selected_shop}"]
-    target_files = st.session_state[f"web_files_{selected_shop}"]
-    day_mapping = st.session_state[f"web_mapping_{selected_shop}"]
-    
-    selected_machine = st.selectbox("🎯 機種名でピンポイント絞り込み", ["✨ すべての機種"] + unique_machines)
-    st.write(f"## 🏆 【{selected_shop}】分析結果")
-    
-    table_rows = []
+            if current_shop_key in st.session_state:
+        all_data = st.session_state[current_shop_key]
+        unique_machines = st.session_state[f"web_machines_{selected_shop}"]
+        target_files = st.session_state[f"web_files_{selected_shop}"]
+        day_mapping = st.session_state[f"web_mapping_{selected_shop}"]
+
+        selected_machine = st.selectbox("🎰 機種名でピンポイント絞り込み", ["✨ すべての機種"] + unique_machines)
+        st.write(f"### 📊 【{selected_shop}】分析結果")
+
+        # 一覧表の組み立て
+        table_rows = []
+
         for table_num, info in all_data.items():
             if selected_machine != "✨ すべての機種" and info["name"] != selected_machine: continue
             history = info["history"]
@@ -194,7 +196,7 @@ if current_shop_key in st.session_state:
             )
             
             # 💡 【インデント完全修正】クリックした台のグラフを安全に表示する処理
-        if isinstance(selected_rows, pd.DataFrame) and not selected_rows.empty:
+            if isinstance(selected_rows, pd.DataFrame) and not selected_rows.empty:
                 row_idx = 0
                 
                 # 表示されているテーブルのトップ、または選択された機種の履歴データを安全に抽出
@@ -272,5 +274,5 @@ if current_shop_key in st.session_state:
                     df_summary = df_table_formatted.T
                     df_summary.columns = [f"{col}日前" for col in df_summary.columns]
                     st.dataframe(df_summary, use_container_width=True)
-else:
-    st.info("🔍 条件に一致するデータがありません。設定枚数や絞り込み条件を変えてみてください。")
+    else:
+        st.info("🔍 条件に一致するデータがありません。設定枚数や絞り込み条件を変えてみてください。")
