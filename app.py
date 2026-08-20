@@ -127,22 +127,47 @@ if current_shop_key in st.session_state:
         show_this_table, star, rank_score = False, "", 0
         if min_coin == "all":
             show_this_table = True
-            if history.get(2, 0) > 0 and history.get(3, 0) > 0: star, rank_score = "🔥🔥🔥 連続プラス", 3
-            elif history.get(2, 0) > 0: star, rank_score = "🔥🔥 前日プラス", 2
-            else: star, rank_score = "🔥 単発プラス", 1
+            # 🔥 過去10日間に向かって実際の連続プラス日数を自動カウント！
+            plus_streak = 0
+            if latest_coin > 0:
+                plus_streak = 1
+                for idx in range(2, 11):
+                    if history.get(idx, 0) > 0: plus_streak += 1
+                    else: break
+            
+            if plus_streak >= 3: star, rank_score = f"🔥 {plus_streak}日連続プラス", plus_streak
+            elif plus_streak == 2: star, rank_score = "🔶 2日連続プラス", 2
+            elif plus_streak == 1: star, rank_score = "🔸 前日のみプラス", 1
+            else: star, rank_score = "💧 凹み台", 0
         else:
             if analysis_mode == "据え置き狙い（連続プラス台）":
                 if latest_coin >= min_coin:
                     show_this_table = True
-                    if history.get(2, 0) > 0 and history.get(3, 0) > 0: star, rank_score = "🔥🔥🔥 連続プラス", 3
-                    elif history.get(2, 0) > 0: star, rank_score = "🔥🔥 前日プラス", 2
-                    else: star, rank_score = "🔥 単発プラス", 1
+                    # 🔥 据え置きモードの時も同様に自動カウント
+                    plus_streak = 0
+                    if latest_coin > 0:
+                        plus_streak = 1
+                        for idx in range(2, 11):
+                            if history.get(idx, 0) > 0: plus_streak += 1
+                            else: break
+                    
+                    if plus_streak >= 3: star, rank_score = f"🔥 {plus_streak}日連続プラス", plus_streak
+                    elif plus_streak == 2: star, rank_score = "🔶 2日連続プラス", 2
+                    else: star, rank_score = "🔸 前日のみプラス", 1
             elif analysis_mode == "設定上げ狙い（連続凹み台）":
                 if latest_coin < 0:
                     show_this_table = True
-                    if history.get(2, 0) < 0 and history.get(3, 0) < 0: star, rank_score = "💎💎💎 3日連続凹み", 3
-                    elif history.get(2, 0) < 0: star, rank_score = "💎💎 2日連続凹み", 2
-                    else: star, rank_score = "💎 前日のみ凹み", 1
+                    # 💎 設定上げモードの時は連続凹み日数を自動カウント！
+                    minus_streak = 0
+                    if latest_coin < 0:
+                        minus_streak = 1
+                        for idx in range(2, 11):
+                            if history.get(idx, 0) < 0: minus_streak += 1
+                            else: break
+                    
+                    if minus_streak >= 3: star, rank_score = f"💎 {minus_streak}日連続凹み", minus_streak
+                    elif minus_streak == 2: star, rank_score = "🔷 2日連続凹み", 2
+                    else: star, rank_score = "🔹 前日のみ凹み", 1
 
         if show_this_table:
             total_days = plus_days + minus_days
