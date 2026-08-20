@@ -56,6 +56,8 @@ if st.button(button_label, type="primary"):
     
     total_shops = len(shops_to_scan)
     headers = {"User-Agent": "Streamlit-App"}
+    if GITHUB_TOKEN and GITHUB_TOKEN != "":
+        headers["Authorization"] = f"token {GITHUB_TOKEN}"
     
     global_target_files = []
     global_day_mapping = {}
@@ -66,7 +68,7 @@ if st.button(button_label, type="primary"):
             progress_bar.progress(progress_percent)
             status_text.text(f"⏳ ({idx+1}/{total_shops}) 【{shop_name}】のデータを取得中...")
             
-            folder_name = shop_map[shop_name]
+            folder_name = shop_map.get(shop_name)
             api_url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/data/{folder_name}"
             
             api_res = requests.get(api_url, headers=headers)
@@ -75,7 +77,7 @@ if st.button(button_label, type="primary"):
                 continue
                 
             api_data = api_res.json()
-            all_files = sorted([f["name"] for f in api_data if f["name"].endswith(".txt")], reverse=True)
+            all_files = sorted([f.get("name") for f in api_data if f.get("name").endswith(".txt")], reverse=True)
             target_files = all_files[:10]
             
             if not target_files:
@@ -89,21 +91,21 @@ if st.button(button_label, type="primary"):
                 global_day_mapping = day_mapping
             
             for fname in target_files:
-                day_num = day_mapping[fname]
+                day_num = day_mapping.get(fname)
                 file_raw_url = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/{GITHUB_BRANCH}/data/{folder_name}/{fname}"
                 
-                file_res = requests.get(file_raw_url)
+                file_res = requests.get(file_raw_url, headers=headers)
                 if file_res.status_code == 200:
                     lines = file_res.content.decode("utf-8").split("\n")
                     for line in lines:
                         line = line.strip()
                         if not line or "機種" in line or "台番" in line: continue
-                        parts = re.split(r'\t+|\s{2,}', line)
+                        parts = re.split(r"\t+|\s{2,}", line)
                         
                         if len(parts) >= 3:
-                            name = parts[0].strip()
-                            table_text = parts[1].strip()
-                            coin_text = parts[2].strip()
+                            name = parts.pop(0).strip()
+                            table_text = parts.pop(0).strip()
+                            coin_text = parts.pop(0).strip()
                             
                             clean_coin = coin_text.replace("枚", "").replace(",", "").replace("+", "").strip()
                             try:
@@ -117,7 +119,7 @@ if st.button(button_label, type="primary"):
                                         "name": name, 
                                         "history": {}
                                     }
-                                all_combined_data[unique_key]["history"][day_num] = coin
+                                all_combined_data.get(unique_key).get("history")[day_num] = coin
                             except ValueError: continue
 
         progress_bar.progress(1.0)
@@ -135,20 +137,20 @@ if st.button(button_label, type="primary"):
     except Exception as e:
         st.error(f"❌ エラーが発生しました: {str(e)}")
 
-if current_data_key in st.session_state and st.session_state[current_data_key]:
-    all_data = st.session_state[current_data_key]
-    target_files = st.session_state[f"web_files_{current_data_key}"]
-    day_mapping = st.session_state[f"web_mapping_{current_data_key}"]
+if current_data_key in st.session_state and st.session_state.get(current_data_key):
+    all_data = st.session_state.get(current_data_key)
+    target_files = st.session_state.get(f"web_files_{current_data_key}")
+    day_mapping = st.session_state.get(f"web_mapping_{current_data_key}")
     
-    unique_machines = sorted(list(set(info["name"] for info in all_data.values())))
+    unique_machines = sorted(list(set(info.get("name") for info in all_data.values())))
     selected_machine = st.selectbox("🎯 機種名でピンポイント絞り込み", ["✨ すべての機種"] + unique_machines)
     
     st.write(f"## 🏆 分析結果")
     
     table_rows = []
     for unique_key, info in all_data.items():
-        if selected_machine != "✨ すべての機種" and info["name"] != selected_machine: continue
-        history = info["history"]
+        if selected_machine != "✨ すべての機種" and info.get("name") != selected_machine: continue
+        history = info.get("history")
         latest_coin = history.get(1, None)
         if latest_coin is None: continue
         
@@ -158,8 +160,9 @@ if current_data_key in st.session_state and st.session_state[current_data_key]:
         
         history_k_list = []
         for fname in target_files:
-            if day_mapping[fname] in history:
-                v = history[day_mapping[fname]]
+            target_day = day_mapping.get(fname)
+            if target_day in history:
+                v = history.get(target_day)
                 history_k_list.append("0" if v == 0 else f"{v/1000:+.1f}k".replace(".0k", "k"))
         history_flow_short = "[" + ", ".join(history_k_list) + "]"
         
@@ -209,68 +212,87 @@ if current_data_key in st.session_state and st.session_state[current_data_key]:
             total_days = plus_days + minus_days
             avg_coin = int(total_coin / total_days) if total_days > 0 else 0
             
-            table_rows.append({
-                "rank_score": rank_score, "unique_key": unique_key, "台番号_num": info["table_num"], 
-                "台番号": f"📈 {info['table_num']}番", "機種名": info["name"], "ステータス": star, 
-                "前日差枚": latest_coin, "10日間累計": total_coin, "勝率履歴": f"{plus_days}勝/{minus_days}敗", 
-                "10日平均差枚": avg_coin, "10日間のデータ推移(新しい順)": history_flow_short,
-                "店舗名": info["shop_name"] if view_mode == "🌍 全8店舗を一括スキャンして比べる" else selected_shop
-            })
+            row_dict = {
+                "rank_score": rank_score, 
+                "unique_key": unique_key, 
+                "table_num_raw": info.get("table_num"), 
+                "col_table_num": f"📈 {info.get('table_num')}番", 
+                "col_machine_name": info.get("name"),
+                "col_status": star, 
+                "col_latest_coin": latest_coin, 
+                "col_total_coin": total_coin, 
+                "col_win_loss": f"{plus_days}勝/{minus_days}敗", 
+                "col_avg_coin": avg_coin, 
+                "col_history_flow": history_flow_short,
+                "col_shop_name": info.get("shop_name") if view_mode == "🌍 全8店舗を一括スキャンして比べる" else selected_shop
+            }
+            table_rows.append(row_dict)
             
     if table_rows:
         if analysis_mode == "据え置き狙い（連続プラス台）" or min_coin == "all":
-            table_rows.sort(key=lambda x: (-x["rank_score"], -x["10日間累計"], x["台番号_num"]))
+            table_rows.sort(key=lambda x: (-x.get("rank_score"), -x.get("col_total_coin"), x.get("table_num_raw")))
         else:
-            table_rows.sort(key=lambda x: (-x["rank_score"], x["10日間累計"], x["台番号_num"]))
+            table_rows.sort(key=lambda x: (-x.get("rank_score"), x.get("col_total_coin"), x.get("table_num_raw")))
 
         df_display = pd.DataFrame(table_rows)
 
         if view_mode == "🌍 全8店舗を一括スキャンして比べる":
-            cols = ["店舗名", "台番号", "機種名", "ステータス", "前日差枚", "10日間累計", "勝率履歴", "10日平均差枚", "10日間のデータ推移(新しい順)", "rank_score", "unique_key", "台番号_num"]
-            df_display = df_display[cols]
+            cols_order = ["col_shop_name", "col_table_num", "col_machine_name", "col_status", "col_latest_coin", "col_total_coin", "col_win_loss", "col_avg_coin", "col_history_flow", "rank_score", "unique_key", "table_num_raw"]
+        else:
+            cols_order = ["col_table_num", "col_machine_name", "col_status", "col_latest_coin", "col_total_coin", "col_win_loss", "col_avg_coin", "col_history_flow", "rank_score", "unique_key", "table_num_raw"]
+        
+        df_display = df_display[cols_order]
 
         selected_rows = st.dataframe(
             df_display, use_container_width=True, height=400, on_select="rerun", selection_mode="single-row",
             column_config={
-                "rank_score": None, "unique_key": None, "台番号_num": None,
-                "前日差枚": st.column_config.NumberColumn(format="%+,d枚", alignment="left"), 
-                "10日間累計": st.column_config.NumberColumn(format="%+,d枚", alignment="left"),
-                "10日平均差枚": st.column_config.NumberColumn(format="%+,d枚", alignment="left"),
+                "rank_score": None,
+                "unique_key": None,
+                "table_num_raw": None,
+                "col_shop_name": st.column_config.TextColumn("店舗名"),
+                "col_table_num": st.column_config.TextColumn("台番号"),
+                "col_machine_name": st.column_config.TextColumn("機種名"),
+                "col_status": st.column_config.TextColumn("ステータス"),
+                "col_win_loss": st.column_config.TextColumn("勝率履歴"),
+                "col_history_flow": st.column_config.TextColumn("10日間のデータ推移(新しい順)"),
+                "col_latest_coin": st.column_config.NumberColumn("前日差枚", format="%+,d枚", alignment="left"), 
+                "col_total_coin": st.column_config.NumberColumn("10日間累計", format="%+,d枚", alignment="left"),
+                "col_avg_coin": st.column_config.NumberColumn("10日平均差枚", format="%+,d枚", alignment="left"),
             }
         )
         
-        if selected_rows and "rows" in selected_rows["selection"] and selected_rows["selection"]["rows"]:
-            row_idx = selected_rows["selection"]["rows"][0]
+        if selected_rows and "rows" in selected_rows.get("selection") and selected_rows.get("selection").get("rows"):
+            row_idx = selected_rows.get("selection").get("rows")
         else:
             row_idx = 0
         
-        target_key = df_display.iloc[row_idx]["unique_key"]
-        target_table_num = df_display.iloc[row_idx]["台番号_num"]
-        target_machine_name = str(df_display.iloc[row_idx]["機種名"])
-        target_shop_name = df_display.iloc[row_idx]["店舗名"] if view_mode == "🌍 全8店舗を一括スキャンして比べる" else selected_shop
+        target_key = df_display.iloc[row_idx].get("unique_key")
+        target_table_num = df_display.iloc[row_idx].get("table_num_raw")
+        target_machine_name = str(df_display.iloc[row_idx].get("col_machine_name"))
+        target_shop_name = df_display.iloc[row_idx].get("col_shop_name")
         
         if target_key:
             st.write("---")
             st.write(f"### 📊 【{target_shop_name}】{target_table_num}番台（{target_machine_name}）の10日間差枚数データ（日別）")
-            target_history = all_data[target_key]["history"]
+            target_history = all_data.get(target_key).get("history")
             graph_data = []
             
             for fname in reversed(target_files):
-                day_num = day_mapping[fname]
-                if day_num in target_history: graph_data.append({"index_num": day_num, "当日の差枚数": target_history[day_num]})
+                day_num = day_mapping.get(fname)
+                if day_num in target_history: graph_data.append({"index_num": day_num, "value_coin": target_history.get(day_num)})
                 
             if graph_data:
                 df_chart = pd.DataFrame(graph_data)
                 df_chart_fixed = df_chart.set_index("index_num").reindex(range(1, 11)).dropna()
                 
                 df_chronological = df_chart_fixed.sort_index(ascending=False)
-                cum_sum_data = np.cumsum(df_chronological["当日の差枚数"])
+                cum_sum_data = np.cumsum(df_chronological.get("value_coin"))
                 
                 y_values = [int(val) for val in cum_sum_data]
                 x_labels = ["スタート"] + [f"{idx}日前" for idx in df_chronological.index]
                 
                 fig = go.Figure()
-                zero_y = [0] * len(x_labels)
+                zero_y = np.zeros(len(x_labels)).tolist()
                     
                 fig.add_trace(go.Scatter(
                     x=x_labels, y=zero_y, mode="lines", 
@@ -294,9 +316,11 @@ if current_data_key in st.session_state and st.session_state[current_data_key]:
                 st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
                 
                 df_table_formatted = df_chronological.copy()
-                df_table_formatted["当日の差枚数"] = df_table_formatted["当日の差枚数"].map(lambda x: f"{x:+,}" if x != 0 else "0")
+                df_table_formatted["value_coin"] = df_table_formatted.get("value_coin").map(lambda x: f"{x:+,}" if x != 0 else "0")
                 df_summary = df_table_formatted.T
                 df_summary.columns = [f"{col}日前" for col in df_summary.columns]
+                
+                df_summary = df_summary.rename(index={"value_coin": "当日の差枚数"})
                 st.dataframe(df_summary, use_container_width=True)
     else:
         st.info("😭 条件に合う台は見つかりませんでした。")
