@@ -177,7 +177,8 @@ if current_shop_key in st.session_state:
         else:
             row_idx = 0
         
-        target_table_num = int(df_display.iloc[row_idx]["台番号_num"])
+# ⭕ 180行目と181行目をこの正しい文字に直します！（インデントの位置はそのままでOK！）
+        target_table_num = int(df_display.iloc[row_idx]["台番号"].replace("番台", ""))
         target_machine_name = str(df_display.iloc[row_idx]["機種名"])
         
         if target_table_num:
