@@ -37,10 +37,10 @@ current_shop_key = f'web_data_{selected_shop}'
 
 if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキャン", type="primary"):
     with st.spinner(f"⏳ ネット上の【{selected_shop}】フォルダからデータを取得中..."):
-        try:
+        try:  # 👈 ここ！ spinner の「w」より4マス右（1段分右）に引っ込めます！
             folder_name = shop_map.get(selected_shop)
-            
             headers = {"User-Agent": "Streamlit-App"}
+            
     # 💡 【完全防衛】バラバラの言葉を足し算して、システム専用の正しいアドレスを作ります！
     url_base = "https://api.github.com/repos/"
     api_url = url_base.replace(" ", "") + GITHUB_USER + "/" + GITHUB_REPO + "/contents/data/" + folder_name
