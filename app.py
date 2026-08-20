@@ -94,33 +94,20 @@ if st.button(button_label, type="primary"):
         except Exception as e:
             st.error(f"❌ エラーが発生しました: {str(e)}")
 
-if current_shop_key in st.session_state:
-    all_data = st.session_state.get(current_shop_key)
+if current_shop_key in st.session_state and st.session_state.get(current_shop_key):
+        all_data = st.session_state.get(current_shop_key)
     unique_machines = st.session_state.get(f"web_machines_{current_shop_key}")
     target_files = st.session_state.get(f"web_files_{current_shop_key}")
     day_mapping = st.session_state.get(f"web_mapping_{current_shop_key}")
     
     selected_machine = st.selectbox("🎯 機種名でピンポイント絞り込み", ["✨ すべての機種"] + unique_machines)
-    st.write(f"## 🏆 【{selected_shop}】分析結果")
+    st.write(f"## 🏆 分析結果（直近10日間データ）")
     
-table_rows = []
-for unique_key, info in all_data.items():
-    if selected_machine != "✨ すべての機種" and info.get("name") != selected_machine: continue
-    history = info.get("history")
-    
-    # 💡 1日前、過去10日間のデータを安全に取得
-    latest_coin = history.get("1", history.get(1, None))
-    if latest_coin is None: continue
-    
-    plus_days = sum(1 for v in history.values() if v > 0)
-    minus_days = sum(1 for v in history.values() if v <= 0)
-    total_coin = sum(history.values())
-    
-    history_k_list = []
-    for i in range(1, 11):
-        val = history.get(str(i), history.get(i, None))
-        if val is not None:
-            history_k_list.append("0" if val == 0 else f"{val/1000:+.1f}k".replace(".0k", "k"))
+    table_rows = []
+    for unique_key, info in all_data.items():
+        if selected_machine != "✨ すべての機種" and info.get("name") != selected_machine: continue
+        history = info.get("history")
+0:+.1f}k".replace(".0k", "k"))
     history_flow_short = "[" + ", ".join(history_k_list) + "]"
     
     show_this_table, star, rank_score = False, "", 0
