@@ -14,13 +14,16 @@ GITHUB_USER = "akihololive"
 GITHUB_REPO = "pachislot-analysis"
 GITHUB_BRANCH = "main"
 
-# 💡 英語に変更したフォルダ名の対応表
+# 💡 英語に変更したフォルダ名の対応表（秋葉原・上野ジャグラー完全包囲網！）
 shop_map = {
     "アイランド秋葉原店": "island",
-    "エスパス秋葉原店": "espace",
+    "エスパス秋橋原店": "espace",
     "マルハン池袋SB": "maruhan_ikebukuro_sb",
     "マルハン東宝新宿": "maruhan_shinjuku",
     "エクサファースト": "exa",
+    "マルハン池袋店": "maruhan_ikebukuro",
+    "エスパス上野本館": "espace_ueno",
+    "楽園アメ横店": "rakuen_ameyoko", 
 }
 
 selected_shop = st.selectbox("🏢 分析する店舗を選択してください", list(shop_map.keys()))
