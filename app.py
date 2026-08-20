@@ -93,17 +93,17 @@ if st.button(f"🔄 【{selected_shop}】の最新データを一括自動スキ
                                 unique_machines.add(name)
                             except ValueError: continue
 
-            if success_count == 0:
-                st.error(f"❌ データファイルを1つも読み込めませんでした。")
-                st.stop()
-            
-            st.session_state [ current_shop_key ] = all_data
-            st.session_state [ f"web_machines_{selected_shop}" ] = sorted(list(unique_machines))
-            st.session_state [ f"web_files_{selected_shop}" ] = target_files
-            st.session_state [ f"web_mapping_{selected_shop}" ] = day_mapping
+            st.session_state[current_shop_key] = all_data
+            st.session_state[f"web_machines_{selected_shop}"] = sorted(list(unique_machines))
+            st.session_state[f"web_files_{selected_shop}"] = target_files
+            st.session_state[f"web_mapping_{selected_shop}"] = day_mapping
             st.success(f"✅ 【{selected_shop}】のデータスキャンに成功しました！（読み込み完了: {success_count}日分）")
         except Exception as e:
             st.error(f"❌ エラーが発生しました: {str(e)}")
+
+        if success_count == 0:
+            st.error("❌ データファイルを1つも読み込めませんでした。")
+            st.stop()
 
 if current_shop_key in st.session_state:
     all_data = st.session_state [ current_shop_key ]
