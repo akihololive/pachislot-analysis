@@ -268,7 +268,7 @@ if current_shop_key in st.session_state:
                 
                 fig.update_layout(
                     margin=dict(l=20, r=20, t=10, b=10),
-                    height=600,
+                    height=900,
                     showlegend=False,
                     template="plotly_dark",
                     paper_bgcolor="rgba(0,0,0,0)", 
