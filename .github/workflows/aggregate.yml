@@ -24,4 +24,5 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add all_shops_10days.json
-        git diff --cached --quiet || (git commit -m "🔄 手動実行による全店舗10日分合算データの更新" && git push)
+　      git diff --cached --quiet || (git commit -m "🤖 手動実行による全店舗10日分合算データの更新" && git push origin main --force)
+
