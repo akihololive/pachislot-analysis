@@ -5,8 +5,8 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 
-st.set_page_config(page_title="パチスロ 差枚チェッカー", page_icon="🎰", layout="wide")
-st.title("🎰 パチスロ：差枚チェッカー")
+st.set_page_config(page_title="パチスロ 据え置きチェッカー", page_icon="🎰", layout="wide")
+st.title("🎰 パチスロ：据え置きチェッカー")
 st.markdown('直近の差枚数確認用、高設定が据えてあるわけじゃないよ！<span style="color:red;">※8月22日 9:00 更新</span>🐰', unsafe_allow_html=True)
 
 GITHUB_USER = "akihololive"
